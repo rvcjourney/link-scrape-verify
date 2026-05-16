@@ -6,7 +6,7 @@ import requests as _req
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from scraper import run_search, is_chrome_debug_running
 
-WEBHOOK_URL = "https://n8n.b2botix.ai/webhook-test/linkedin-filter"
+WEBHOOK_URL = "https://n8n.b2botix.ai/webhook/linkedin-filter"
 
 app = Flask(__name__, static_folder=".")
 
