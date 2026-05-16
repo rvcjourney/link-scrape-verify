@@ -115,6 +115,25 @@ def _extract_real_url(href: str) -> str:
     return ""
 
 
+def _handle_consent(page: Page) -> bool:
+    """Click through Google's cookie/consent page if it appears."""
+    try:
+        btn = page.locator(
+            "button:has-text('Accept all'), "
+            "button:has-text('I agree'), "
+            "button:has-text('Agree'), "
+            "#L2AGLb, "
+            "[aria-label='Accept all']"
+        ).first
+        if btn.is_visible(timeout=1500):
+            btn.click()
+            time.sleep(0.8)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def _handle_captcha(page: Page) -> bool:
     try:
         loc = page.locator("#captcha-form, [action*='sorry'], form[id*='captcha']")
@@ -125,6 +144,17 @@ def _handle_captcha(page: Page) -> bool:
     except Exception:
         pass
     return False
+
+
+def _results_loaded(page: Page, log) -> bool:
+    """Returns True if Google results div is present, False if blocked/empty."""
+    try:
+        page.wait_for_selector("div#search, div#rso", timeout=8000)
+        return True
+    except PlaywrightTimeout:
+        title = page.title()
+        log(f"Google results not found (page: \"{title}\") — may be blocked or rate-limited.")
+        return False
 
 
 def _extract_links(page: Page) -> list[str]:
@@ -157,7 +187,6 @@ def run_search(query: str, log_fn=None) -> list[str]:
     def log(msg: str):
         console.print(msg)
         if log_fn:
-            # Strip Rich markup before sending to browser
             clean = re.sub(r'\[/?[^\]]*\]', '', msg).strip()
             if clean:
                 log_fn(clean)
@@ -174,8 +203,17 @@ def run_search(query: str, log_fn=None) -> list[str]:
         try:
             log("Opening Google search...")
             page.goto(_search_url(search_query), wait_until="domcontentloaded", timeout=30000)
+
+            # Handle consent page before anything else
+            if _handle_consent(page):
+                log("Accepted Google consent page.")
+
             time.sleep(random.uniform(1, 2))
             _handle_captcha(page)
+
+            if not _results_loaded(page, log):
+                log("Stopping — Google did not return a results page.")
+                return all_urls
 
             for page_num in range(1, config.MAX_PAGES + 1):
                 log(f"Scraping page {page_num} of {config.MAX_PAGES}...")
@@ -195,6 +233,9 @@ def run_search(query: str, log_fn=None) -> list[str]:
                 page.goto(next_url, wait_until="domcontentloaded", timeout=20000)
                 time.sleep(random.uniform(1, 2))
                 _handle_captcha(page)
+                if not _results_loaded(page, log):
+                    log("Lost results page — stopping early.")
+                    break
 
         except PlaywrightTimeout:
             log("Timeout — page took too long to load.")
