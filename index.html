@@ -284,7 +284,8 @@ async function doSearch() {
   switchTab('profiles');
   setStatus('loading', 'Connecting...');
 
-  const logSource = new EventSource('/search-log');
+  const sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const logSource = new EventSource(`/search-log?sid=${sid}`);
   logSource.onmessage = (e) => {
     const d = JSON.parse(e.data);
     if (d.done) { logSource.close(); return; }
@@ -293,7 +294,7 @@ async function doSearch() {
   logSource.onerror = () => logSource.close();
 
   try {
-    const res  = await fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})});
+    const res  = await fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query, sid})});
     const data = await res.json();
     logSource.close();
     if (!res.ok) throw new Error(data.error || 'Server error');

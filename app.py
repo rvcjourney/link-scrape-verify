@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import queue
 import threading
 import requests as _req
@@ -10,19 +11,26 @@ WEBHOOK_URL = "https://n8n.b2botix.ai/webhook/linkedin-filter"
 
 app = Flask(__name__, static_folder=".")
 
-_search_lock    = threading.Lock()
-_running_search = False
-_log_queue: queue.Queue = queue.Queue(maxsize=300)
+# Per-session log queues — keyed by sid so concurrent users don't share state
+_queues: dict[str, queue.Queue] = {}
+_queues_lock = threading.Lock()
 
 
-def _log(msg):
-    if msg is None:
-        _log_queue.put(None)
-        return
-    try:
-        _log_queue.put_nowait(str(msg))
-    except queue.Full:
-        pass
+def _make_queue(sid: str) -> queue.Queue:
+    q = queue.Queue(maxsize=300)
+    with _queues_lock:
+        _queues[sid] = q
+    return q
+
+
+def _get_queue(sid: str):
+    with _queues_lock:
+        return _queues.get(sid)
+
+
+def _drop_queue(sid: str):
+    with _queues_lock:
+        _queues.pop(sid, None)
 
 
 @app.route("/favicon.ico")
@@ -42,10 +50,24 @@ def chrome_status():
 
 @app.route("/search-log")
 def search_log():
+    sid = request.args.get("sid", "")
+
     def generate():
+        # Wait up to 5 s for the queue to be registered
+        # (SSE connects slightly before the POST arrives)
+        q = None
+        for _ in range(50):
+            q = _get_queue(sid)
+            if q is not None:
+                break
+            time.sleep(0.1)
+        if q is None:
+            yield f"data: {json.dumps({'done': True})}\n\n"
+            return
+
         while True:
             try:
-                msg = _log_queue.get(timeout=90)
+                msg = q.get(timeout=90)
                 if msg is None:
                     yield f"data: {json.dumps({'done': True})}\n\n"
                     break
@@ -62,33 +84,31 @@ def search_log():
 
 @app.route("/search", methods=["POST"])
 def search():
-    global _running_search
     data  = request.get_json(force=True)
     query = (data.get("query") or "").strip()
+    sid   = (data.get("sid")   or "").strip()
     if not query:
         return jsonify({"error": "Query is empty"}), 400
 
-    with _search_lock:
-        if _running_search:
-            return jsonify({"error": "A search is already running — please wait for it to finish."}), 429
-        _running_search = True
+    q = _make_queue(sid)
 
-    # Clear any stale log messages from a previous search
-    while not _log_queue.empty():
+    def log_fn(msg):
+        if msg is None:
+            q.put(None)
+            return
         try:
-            _log_queue.get_nowait()
-        except queue.Empty:
-            break
+            q.put_nowait(str(msg))
+        except queue.Full:
+            pass
 
     try:
-        urls = run_search(query, log_fn=_log)
+        urls = run_search(query, log_fn=log_fn)
         return jsonify({"urls": urls, "count": len(urls)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        _log(None)  # sentinel — tells SSE stream the search is done
-        with _search_lock:
-            _running_search = False
+        log_fn(None)  # sentinel — tells the SSE stream this search is done
+        threading.Timer(15, _drop_queue, args=[sid]).start()
 
 
 @app.route("/send-webhook", methods=["POST"])
