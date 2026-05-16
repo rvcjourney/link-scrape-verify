@@ -116,14 +116,14 @@ def _extract_real_url(href: str) -> str:
 
 
 def _handle_captcha(page: Page) -> bool:
-    for sig in ["text=unusual traffic", "text=Verify you are human", "#captcha-form"]:
-        try:
-            if page.locator(sig).first.is_visible(timeout=1500):
-                console.print("[bold red]CAPTCHA — please solve it in the browser window, waiting 2 min...[/bold red]")
-                page.wait_for_selector("div#search", timeout=120000)
-                return True
-        except Exception:
-            continue
+    try:
+        loc = page.locator("#captcha-form, [action*='sorry'], form[id*='captcha']")
+        if loc.first.is_visible(timeout=300):
+            console.print("[bold red]CAPTCHA — please solve it in the browser window, waiting 2 min...[/bold red]")
+            page.wait_for_selector("div#search", timeout=120000)
+            return True
+    except Exception:
+        pass
     return False
 
 
@@ -174,7 +174,7 @@ def run_search(query: str, log_fn=None) -> list[str]:
         try:
             log("Opening Google search...")
             page.goto(_search_url(search_query), wait_until="domcontentloaded", timeout=30000)
-            time.sleep(random.uniform(2, 3))
+            time.sleep(random.uniform(1, 2))
             _handle_captcha(page)
 
             for page_num in range(1, config.MAX_PAGES + 1):
@@ -191,9 +191,9 @@ def run_search(query: str, log_fn=None) -> list[str]:
                 if not next_url:
                     log("No more pages.")
                     break
-                time.sleep(random.uniform(2, 4))
+                time.sleep(random.uniform(1, 2))
                 page.goto(next_url, wait_until="domcontentloaded", timeout=20000)
-                time.sleep(random.uniform(2, 3))
+                time.sleep(random.uniform(1, 2))
                 _handle_captcha(page)
 
         except PlaywrightTimeout:
