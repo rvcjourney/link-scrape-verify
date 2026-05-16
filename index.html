@@ -12,11 +12,10 @@
       min-height:100vh;
     }
     .app{
-      container-type:inline-size;
-      container-name:app;
       display:flex;flex-direction:column;align-items:center;
       padding:40px 16px 80px;
       min-height:100vh;
+      width:100%;
     }
     h1{font-size:1.4rem;font-weight:700;color:#0a66c2;margin-bottom:24px}
 
@@ -212,48 +211,39 @@
     .cell-empty{color:#e5e7eb;font-size:.8rem}
 
     /* ══════════════════════════════════════════
-       Mobile
+       Mobile — driven by ResizeObserver (.app.mob)
+       Works inside iframes regardless of parent
+       viewport or iframe width setting.
     ══════════════════════════════════════════ */
-    @container app (max-width: 640px) {
-      .app { padding: 20px 12px 60px; }
-      h1   { font-size: 1.1rem; margin-bottom: 16px; }
+    .app.mob { padding: 20px 12px 60px; }
+    .app.mob h1   { font-size: 1.1rem; margin-bottom: 16px; }
 
-      /* Search — stack input above button */
-      .search-row { flex-direction: column; gap: 8px; }
-      .btn        { height: 44px; width: 100%; border-radius: 8px; font-size: .95rem; }
+    .app.mob .search-row { flex-direction: column; gap: 8px; }
+    .app.mob .btn        { height: 44px; width: 100%; border-radius: 8px; font-size: .95rem; }
 
-      /* Status */
-      #status { font-size: .78rem; }
+    .app.mob #status { font-size: .78rem; }
 
-      /* Tabs — webhook button wraps full-width below the tabs */
-      .tabs-row    { flex-wrap: wrap; padding-bottom: 8px; row-gap: 8px; }
-      .tabs-spacer { display: none; }
-      .tab         { padding: 8px 14px; font-size: .8rem; }
-      .webhook-btn {
-        order: 99; width: 100%; margin-left: 0;
-        border-radius: 8px; padding: 11px 16px; font-size: .88rem;
-      }
-
-      /* Panes full-width */
-      .pane { max-width: 100%; }
-
-      /* URL rows — hide row number, shrink padding */
-      .row     { padding: 10px 10px; gap: 8px; }
-      .row-num { display: none; }
-      .row-url { font-size: .8rem; }
-      .copy-btn{ padding: 4px 8px; font-size: .7rem; }
-
-      /* List header */
-      .list-hdr { gap: 8px; }
-      .copy-all { padding: 5px 10px; font-size: .74rem; }
-
-      /* Sheet table — smooth iOS scroll */
-      .sheet-wrap { -webkit-overflow-scrolling: touch; border-radius: 8px; }
-
-      /* Sheet toolbar */
-      .sheet-toolbar { flex-wrap: wrap; gap: 8px; }
-      .copy-sel-btn  { width: 100%; text-align: center; }
+    .app.mob .tabs-row    { flex-wrap: wrap; padding-bottom: 8px; row-gap: 8px; }
+    .app.mob .tabs-spacer { display: none; }
+    .app.mob .tab         { padding: 8px 14px; font-size: .8rem; }
+    .app.mob .webhook-btn {
+      order: 99; width: 100%; margin-left: 0;
+      border-radius: 8px; padding: 11px 16px; font-size: .88rem;
     }
+
+    .app.mob .pane    { max-width: 100%; }
+
+    .app.mob .row     { padding: 10px; gap: 8px; }
+    .app.mob .row-num { display: none; }
+    .app.mob .row-url { font-size: .8rem; }
+    .app.mob .copy-btn{ padding: 4px 8px; font-size: .7rem; }
+
+    .app.mob .list-hdr { gap: 8px; }
+    .app.mob .copy-all { padding: 5px 10px; font-size: .74rem; }
+
+    .app.mob .sheet-wrap   { -webkit-overflow-scrolling: touch; border-radius: 8px; }
+    .app.mob .sheet-toolbar{ flex-wrap: wrap; gap: 8px; }
+    .app.mob .copy-sel-btn { width: 100%; text-align: center; }
   </style>
 </head>
 <body>
@@ -311,6 +301,14 @@
 
 <script>
 let allUrls = [];
+
+// ── Responsive: watch actual rendered width, works inside any iframe ──────────
+(function() {
+  const app = document.querySelector('.app');
+  const update = w => app.classList.toggle('mob', w <= 640);
+  update(app.offsetWidth);
+  new ResizeObserver(entries => update(entries[0].contentRect.width)).observe(app);
+})();
 
 document.getElementById('q').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
 
