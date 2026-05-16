@@ -282,11 +282,20 @@ async function doSearch() {
   document.getElementById('badge-analysis').textContent = '–';
   allUrls = [];
   switchTab('profiles');
-  setStatus('loading', 'Searching Google for LinkedIn profiles...');
+  setStatus('loading', 'Connecting...');
+
+  const logSource = new EventSource('/search-log');
+  logSource.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.done) { logSource.close(); return; }
+    if (d.msg)  setStatus('loading', d.msg);
+  };
+  logSource.onerror = () => logSource.close();
 
   try {
     const res  = await fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})});
     const data = await res.json();
+    logSource.close();
     if (!res.ok) throw new Error(data.error || 'Server error');
     allUrls = data.urls || [];
     if (!allUrls.length) {
@@ -300,6 +309,7 @@ async function doSearch() {
     document.getElementById('badge-profiles').textContent = allUrls.length;
     setStatus('ok', `Found ${allUrls.length} profile${allUrls.length !== 1 ? 's' : ''}. Select profiles to send to webhook.`);
   } catch(e) {
+    logSource.close();
     setStatus('error', e.message);
   }
   document.getElementById('btn').disabled = false;
@@ -536,8 +546,8 @@ function copySelected() {
 function setStatus(type, msg) {
   const el = document.getElementById('status');
   if (type === 'loading') el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
-  else if (type === 'error') el.innerHTML = `<span style="color:#fca5a5">${msg}</span>`;
-  else el.innerHTML = `<span style="color:#86efac">${msg}</span>`;
+  else if (type === 'error') el.innerHTML = `<span style="color:#dc2626">${msg}</span>`;
+  else el.innerHTML = `<span style="color:#16a34a">${msg}</span>`;
 }
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

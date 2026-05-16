@@ -153,32 +153,43 @@ def _next_page_url(page: Page):
     return None
 
 
-def run_search(query: str) -> list[str]:
+def run_search(query: str, log_fn=None) -> list[str]:
+    def log(msg: str):
+        console.print(msg)
+        if log_fn:
+            # Strip Rich markup before sending to browser
+            clean = re.sub(r'\[/?[^\]]*\]', '', msg).strip()
+            if clean:
+                log_fn(clean)
+
     all_urls: list[str] = []
     seen:     set[str]  = set()
     search_query = build_search_query(query)
-    console.print(f"\n[bold cyan]Query:[/bold cyan] {search_query}\n")
+    log(f"Query: {search_query}")
 
     with sync_playwright() as pw:
+        log("Launching browser...")
         browser, context = _get_browser(pw)
         page = context.new_page()
         try:
+            log("Opening Google search...")
             page.goto(_search_url(search_query), wait_until="domcontentloaded", timeout=30000)
             time.sleep(random.uniform(2, 3))
             _handle_captcha(page)
 
             for page_num in range(1, config.MAX_PAGES + 1):
-                console.print(f"[yellow]Page {page_num}...[/yellow]")
+                log(f"Scraping page {page_num} of {config.MAX_PAGES}...")
                 found = _extract_links(page)
                 new   = [u for u in found if u not in seen]
                 seen.update(new)
                 all_urls.extend(new)
-                console.print(f"  +{len(new)} links (total: {len(all_urls)})")
+                log(f"Page {page_num}: +{len(new)} profiles found (total: {len(all_urls)})")
 
                 if page_num >= config.MAX_PAGES:
                     break
                 next_url = _next_page_url(page)
                 if not next_url:
+                    log("No more pages.")
                     break
                 time.sleep(random.uniform(2, 4))
                 page.goto(next_url, wait_until="domcontentloaded", timeout=20000)
@@ -186,12 +197,13 @@ def run_search(query: str) -> list[str]:
                 _handle_captcha(page)
 
         except PlaywrightTimeout:
-            console.print("[red]Timeout.[/red]")
+            log("Timeout — page took too long to load.")
         except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
+            log(f"Error: {e}")
         finally:
             page.close()
             if browser:
                 browser.close()
 
+    log(f"Done — {len(all_urls)} profiles collected.")
     return all_urls
