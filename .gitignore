@@ -1,0 +1,8 @@
+browser_profile/
+__pycache__/
+*.pyc
+*.pyo
+output/
+.env
+*.log
+launch_chrome.bat

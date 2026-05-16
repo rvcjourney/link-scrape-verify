@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  scraper:
+    build: .
+    container_name: linkedin-scraper
+    ports:
+      - "4008:4008"
+    environment:
+      - HEADLESS=true
+      - PORT=4008
+    restart: unless-stopped
+    networks:
+      - scraper-net
+
+networks:
+  scraper-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.70.0.0/24

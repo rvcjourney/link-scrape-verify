@@ -1,0 +1,5 @@
+flask>=3.0.0
+playwright>=1.44.0
+requests>=2.32.0
+browser-cookie3>=0.19.1
+rich>=13.7.0
