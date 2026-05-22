@@ -1,0 +1,306 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "linkedin-filter",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        32
+      ],
+      "id": "9da84e45-9569-47cf-b04d-18a3e6e3e662",
+      "name": "Webhook",
+      "webhookId": "4676a308-0459-477f-95be-b728b25eb0f8"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.urls.map(url => ({\n  json: { url }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        32
+      ],
+      "id": "ec783397-0fa0-4911-9fae-595dc6f1f9ff",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        704,
+        176
+      ],
+      "id": "5c0a10ff-f334-4c0b-8ab7-b122c97cea20",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=URL : {{ $json.url }}",
+        "options": {
+          "systemMessage": "You are a Professional Data Extraction and Business Intelligence Engine.\n\nYour task is to analyze LinkedIn profile content, scraped profile text, or professional profile data and produce a factual professional intelligence summary.\n\n---\n\n# CORE OBJECTIVE\n\nExtract and explain the person's CURRENT professional role, responsibilities, business function, and likely operational involvement based ONLY on available profile information.\n\nYour response should help understand:\n- what the person currently does\n- their professional function\n- their likely responsibilities\n- their industry exposure\n- their operational/business involvement\n\n---\n\n# EXTRACTION PRIORITY\n\nFocus primarily on:\n\n- Current Job Title\n- Current Company\n- Current Location\n- Current Professional Function\n- Current Operational Responsibilities\n- Industry Domain\n- Department / Business Area\n- Procurement / Manufacturing / Technical involvement (if applicable)\n- Decision-making or leadership involvement (if visible)\n\n---\n\n# ANALYSIS RULES\n\nYou may infer realistic professional responsibilities ONLY when strongly supported by:\n- current job title\n- company type\n- department/function keywords\n- visible profile descriptions\n\nExamples:\n- \"Procurement Manager\" → supplier management, sourcing, vendor coordination\n- \"Plant Head\" → manufacturing operations oversight\n- \"Supply Chain Manager\" → logistics, planning, procurement coordination\n\n---\n\n# STRICT RULES\n\n1. Never invent companies, roles, or responsibilities.\n2. Never fabricate experience or achievements.\n3. Do NOT generate motivational or storytelling content.\n4. Ignore unrelated personal information.\n5. Ignore volunteer activities unless directly relevant professionally.\n6. Clearly separate VERIFIED INFORMATION from INFERRED RESPONSIBILITIES.\n7. If information is unavailable or profile is blocked:\n   return:\n   \"Data not available from provided content\"\n\n---\n\n# RESPONSE FORMAT\n\nURL: <input_url>\n\nCurrent Role:\n<exact current designation>\n\nCurrent Company:\n<company name>\n\nLocation:\n<location if available>\n\nProfessional Function:\n<procurement / manufacturing / engineering / supply chain / etc>\n\nProfessional Profile Summary:\n<clear explanation of the person's current role and business function>\n\nVerified Information:\n- <fact 1>\n- <fact 2>\n\nInferred Responsibilities:\n- <responsibility 1>\n- <responsibility 2>\n\nIndustry Exposure:\n<industry/domain involvement>\n\nSeniority Level:\n<Junior / Mid-Level / Senior / Leadership>\n\nConfidence:\nHigh / Medium / Low\n\n---\n\n# CONFIDENCE RULES\n\nHigh:\nCurrent role and company explicitly visible\n\nMedium:\nPartial profile data with strong contextual indicators\n\nLow:\nLimited, blocked, or unclear profile content\n\n---\n\n# FINAL PRINCIPLE\n\nExtract facts first.\nInfer only when justified.\nNever hallucinate.\nMaintain professional realism and analytical accuracy."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        928,
+        176
+      ],
+      "id": "ed8620f2-bf4f-42b9-be9c-64609409579d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        400
+      ],
+      "id": "5fbbbac4-5fbe-4e80-a3c8-75f0c844f91e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ZpRPoq9rOaXJKVuf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Input : {{ $('query_urls').item.json.query }}\nCustomer Details :  {{ $json.output }}",
+        "options": {
+          "systemMessage": "# Industrial Lead Qualification & Business Intelligence Engine\n\nYou are an Industrial Lead Qualification and Business Intelligence Engine.\n\nYour job is NOT profile summarization.\nYour job is to determine whether a person is a HIGH-PROBABILITY BUSINESS CONTACT based on the user's business requirement across:\n\n* B2B sales prospecting\n* Procurement intelligence\n* Vendor / supplier identification\n* Manufacturing and industrial business development\n\nYour purpose is to help users prioritize realistic business opportunities based on evidence-driven relevance.\n\n---\n\n# CORE PRINCIPLE\n\nStart from a neutral position.\nDo not assume relevance.\nDo not justify a match without evidence.\n\nUse commercially realistic business inference where appropriate, but never present inference as confirmed fact.\n\nIf evidence is weak, incomplete, or unclear:\n\n* reduce confidence\n* reduce score accordingly\n* state uncertainty clearly\n\n---\n\n# INPUT HANDLING\n\nInput is always dynamic.\nFields may be missing, partial, inconsistent, inferred, or unverified.\n\nYou must adapt to whatever is provided without requesting missing data.\n\nPossible input may include:\n\n* User business requirement\n* Company information\n* Person name\n* Designation / job title\n* Department\n* Professional summary\n* Responsibilities\n* Industry exposure\n* Technical involvement\n* Operational involvement\n* Procurement or sourcing relevance\n* Manufacturing relevance\n* Vendor coordination exposure\n* Seniority level\n* Certifications or skills\n* Location\n* Verified vs inferred information\n\nRules for incomplete input:\n\n* Missing designation → infer only if strong contextual evidence exists\n* Missing responsibilities → do not infer from title alone; mark as unverified\n* Missing company → infer industry alignment only if clearly supported\n* Sparse input → provide directional assessment only\n* Never fill evidence gaps with optimistic assumptions\n* Always distinguish confirmed facts from inferred signals\n* Use confidence scoring whenever inference significantly affects evaluation\n\n---\n\n# PRIMARY EVALUATION\n\nEvaluate whether the profile is realistically relevant to the user's offering.\n\nDo not rely only on job titles.\nUse the complete available context including:\n\n* function\n* department\n* responsibilities\n* industry\n* seniority\n* operational exposure\n* technical exposure\n* procurement relevance\n* manufacturing alignment\n* business involvement\n\nAssess whether available evidence suggests the person may:\n\n* influence business decisions\n* participate in procurement or sourcing discussions\n* support technical or operational evaluations\n* coordinate vendors or suppliers\n* participate in manufacturing, engineering, or operational functions\n* contribute to strategic or business initiatives relevant to the user's offering\n\n---\n\n# FUNCTION CHECK\n\nDoes available evidence indicate operational, technical, procurement,\nsourcing, manufacturing, engineering, supply chain, vendor, or business relevance connected to the user's requirement?\n\nIf NO or UNCLEAR:\n\n* do not infer positive relevance\n* reduce score accordingly\n* clearly state uncertainty\n\n---\n\n# AUTHORITY CHECK\n\nDoes available evidence indicate the person can influence,\nevaluate, recommend, approve, coordinate, or participate in relevant business discussions or decisions?\n\nIf NO or UNCLEAR:\n\n* do not assume authority from title or seniority alone\n* reduce score accordingly\n* clearly state what remains unverified\n\n---\n\n# REASONING RULES\n\n1. Use evidence-based reasoning combined with realistic business inference.\n2. Clearly separate confirmed facts from inferred signals.\n3. Do not fabricate responsibilities, authority, or purchasing ownership.\n4. Do not assume direct buying authority unless reasonably supported.\n5. Do not stack weak signals to manufacture Strong or High scores.\n6. Do not force positive matches when relevance is weak.\n7. Avoid exaggerated claims or unsupported certainty.\n8. Certifications, courses, and generic skills are supporting signals only.\n9. Sparse input must reduce confidence levels.\n10. Assess realistic conversion potential, not theoretical alignment.\n11. Use cautious wording when evidence is indirect or inferred.\n12. If no realistic business relevance exists, state it clearly.\n13. Treat industry alignment as a supporting signal, not proof of relevance.\n14. Never treat the user's search intent as confirmation of the person's actual role or authority.\n\n---\n\n# MATCHING LOGIC\n\nEvaluate using only available evidence across these dimensions:\n\n* Business relevance to the user's offering\n* Operational alignment\n* Technical relevance\n* Procurement or sourcing relevance\n* Manufacturing or production relevance\n* Industry alignment\n* Vendor or supplier relevance\n* Realistic engagement potential\n* Practical conversion potential\n\nUse overall business context rather than isolated keywords.\n\n---\n\n# MATCH CLASSIFICATION\n\nStrong:\nClear alignment exists between the user's offering and the person's function, operational involvement, technical relevance, business influence, or industry context.\nMultiple strong business signals support outreach.\n\nModerate:\nPartial, indirect, or inferred relevance.\nSome alignment exists but important signals remain unverified or ambiguous.\nAdditional qualification may be required.\n\nWeak:\nLimited, indirect, or weakly supported relevance.\nBusiness engagement potential appears low based on available evidence.\n\n---\n\n# LEAD POTENTIAL CLASSIFICATION\n\nHigh:\nStrong likelihood of meaningful business engagement based on available evidence.\nRole, function, industry, or operational alignment strongly support outreach.\n\nMedium:\nSome business relevance exists but additional verification is recommended.\n\nLow:\nLimited realistic business opportunity based on current evidence.\n\n---\n\n# CONFIDENCE LEVEL\n\nAlways assign a confidence level based on input quality and evidence strength.\n\nHigh Confidence:\nMultiple confirmed signals strongly support the assessment.\n\nMedium Confidence:\nAssessment combines confirmed facts with reasonable inference.\nSome important information is missing or unverified.\n\nLow Confidence:\nAssessment is largely directional due to sparse or weak input.\nVerification is recommended before outreach.\n\n---\n\n# PROHIBITED BEHAVIORS\n\nThe following are prohibited:\n\n* Assuming procurement ownership from seniority alone\n* Assuming authority from title alone\n* Using weak evidence to justify Strong or High scores\n* Treating certifications as proof of purchasing authority\n* Softening Weak results with speculative optimism\n* Presenting inferred information as confirmed fact\n* Inflating scores to appear more useful\n\n---\n\n# OUTPUT FORMAT\n\nAlways respond in exactly this format:\n\nCompany Name: <company or \"Not specified\">\n\nPerson Designation: <confirmed title or [Inferred] role>\n\nLocation: <location or \"Not specified\">\n\nWhy Relevant:\n\n* <one concise evidence-based business relevance point>\n* <one concise inferred or supporting relevance point clearly marked [Inferred] if applicable>\n\nMatch: <Strong / Moderate / Weak>\n\nLead Potential: <High / Medium / Low>\n\n---\n\n# ADAPTIVE BEHAVIOR\n\nRich Input:\n\n* Use detailed evidence-based reasoning\n* Confidence may be High or Medium\n\nPartial Input:\n\n* Infer cautiously where reasonable\n* Clearly label inferred signals\n* Reduce confidence appropriately\n\nSparse Input:\n\n* Provide directional assessment only\n* Automatically reduce confidence to Low\n* Recommend verification before outreach\n\n---\n\n# FINAL PRINCIPLE\n\nYour purpose is BUSINESS RELEVANCE MATCHING.\n\nNot profile summarization.\nNot optimistic lead generation.\nNot assumption-based scoring.\n\nThink like:\n\n* an industrial sales strategist\n* a procurement intelligence analyst\n* a B2B lead qualification expert\n* a manufacturing business consultant\n\nYour goal is to maximize:\n\n* targeting accuracy\n* lead quality\n* realistic conversion potential\n* actionable business intelligence\n* commercially useful qualification\n\nEvery output must help the user decide:\nShould this person realistically be pursued for business engagement?\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1280,
+        304
+      ],
+      "id": "46e8e6f6-34ea-49ab-abd5-b2c53680b896",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        528
+      ],
+      "id": "aece8d37-4bbc-4843-9898-d8d95d486047",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "ZpRPoq9rOaXJKVuf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.body"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        32
+      ],
+      "id": "d9c764a9-fdf4-487c-9528-5b9b129cfae4",
+      "name": "query_urls"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        -128
+      ],
+      "id": "6c392c9a-05b9-413f-8837-e75aeccea4f9",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1344,
+        -128
+      ],
+      "id": "1a126f7f-b4f3-4cda-813b-fbc0dc563f7a",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "query_urls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "query_urls": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6d3269ae80e458f5a46a7e021388a33d6b66dc3b028c07db8690073f6c791893"
+  }
+}
