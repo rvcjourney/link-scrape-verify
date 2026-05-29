@@ -7,6 +7,9 @@ services:
     environment:
       - HEADLESS=true
       - PORT=4008
+      # - WEBHOOK_URL=https://n8n.b2botix.ai/webhook/linkedin-filter
+    volumes:
+      - ./output:/app/output
     restart: unless-stopped
     networks:
       - scraper-net

@@ -7,7 +7,7 @@ import requests as _req
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from scraper import run_search, is_chrome_debug_running
 
-WEBHOOK_URL = "https://n8n.b2botix.ai/webhook/linkedin-filter"
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "https://n8n.b2botix.ai/webhook/linkedin-filter")
 
 app = Flask(__name__, static_folder=".")
 
@@ -45,7 +45,10 @@ def index():
 
 @app.route("/chrome-status")
 def chrome_status():
-    return jsonify({"connected": is_chrome_debug_running()})
+    import config as _cfg
+    if _cfg.BROWSER_HEADLESS:
+        return jsonify({"connected": False, "headless": True})
+    return jsonify({"connected": is_chrome_debug_running(), "headless": False})
 
 
 @app.route("/search-log")
@@ -122,7 +125,7 @@ def send_webhook():
         wh = _req.post(
             WEBHOOK_URL,
             json={"query": query, "urls": urls},
-            timeout=300,
+            timeout=60,
         )
         wh.raise_for_status()
         return jsonify({"ok": True, "status": wh.status_code, "response": wh.json()})

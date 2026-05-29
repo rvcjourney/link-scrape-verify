@@ -1,6 +1,7 @@
 import time
 import re
 import random
+import threading
 from urllib.parse import quote_plus, unquote, urlparse, parse_qs
 from urllib.request import urlopen
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
@@ -8,6 +9,8 @@ from rich.console import Console
 import config
 
 console = Console()
+
+_SEARCH_SEMAPHORE = threading.Semaphore(3)
 
 _STEALTH_JS = """
 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
@@ -72,7 +75,7 @@ def _get_browser(pw):
         user_agent=(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
+            "Chrome/136.0.0.0 Safari/537.36"
         ),
         viewport={"width": 1280, "height": 800},
         locale="en-US",
@@ -134,10 +137,16 @@ def _handle_consent(page: Page) -> bool:
     return False
 
 
-def _handle_captcha(page: Page) -> bool:
+def _handle_captcha(page: Page, log=None) -> bool:
     try:
         loc = page.locator("#captcha-form, [action*='sorry'], form[id*='captcha']")
         if loc.first.is_visible(timeout=300):
+            if config.BROWSER_HEADLESS:
+                msg = "CAPTCHA detected — cannot solve in headless mode. Stopping search."
+                console.print(f"[bold red]{msg}[/bold red]")
+                if log:
+                    log(msg)
+                return True
             console.print("[bold red]CAPTCHA — please solve it in the browser window, waiting 2 min...[/bold red]")
             page.wait_for_selector("div#search", timeout=120000)
             return True
@@ -196,55 +205,65 @@ def run_search(query: str, log_fn=None) -> list[str]:
     search_query = build_search_query(query)
     log(f"Query: {search_query}")
 
-    with sync_playwright() as pw:
-        log("Launching browser...")
-        browser, context = _get_browser(pw)
-        page = context.new_page()
-        try:
-            log("Opening Google search...")
-            page.goto(_search_url(search_query), wait_until="domcontentloaded", timeout=30000)
+    if not _SEARCH_SEMAPHORE.acquire(blocking=True, timeout=30):
+        log("Server is busy — too many concurrent searches. Please try again shortly.")
+        return all_urls
 
-            # Handle consent page before anything else
-            if _handle_consent(page):
-                log("Accepted Google consent page.")
+    try:
+        with sync_playwright() as pw:
+            log("Launching browser...")
+            browser, context = _get_browser(pw)
+            page = context.new_page()
+            try:
+                log("Opening Google search...")
+                page.goto(_search_url(search_query), wait_until="domcontentloaded", timeout=30000)
 
-            time.sleep(random.uniform(1, 2))
-            _handle_captcha(page)
+                # Handle consent page before anything else
+                if _handle_consent(page):
+                    log("Accepted Google consent page.")
 
-            if not _results_loaded(page, log):
-                log("Stopping — Google did not return a results page.")
-                return all_urls
-
-            for page_num in range(1, config.MAX_PAGES + 1):
-                log(f"Scraping page {page_num} of {config.MAX_PAGES}...")
-                found = _extract_links(page)
-                new   = [u for u in found if u not in seen]
-                seen.update(new)
-                all_urls.extend(new)
-                log(f"Page {page_num}: +{len(new)} profiles found (total: {len(all_urls)})")
-
-                if page_num >= config.MAX_PAGES:
-                    break
-                next_url = _next_page_url(page)
-                if not next_url:
-                    log("No more pages.")
-                    break
                 time.sleep(random.uniform(1, 2))
-                page.goto(next_url, wait_until="domcontentloaded", timeout=20000)
-                time.sleep(random.uniform(1, 2))
-                _handle_captcha(page)
+                if _handle_captcha(page, log) and config.BROWSER_HEADLESS:
+                    return all_urls
+
                 if not _results_loaded(page, log):
-                    log("Lost results page — stopping early.")
-                    break
+                    log("Stopping — Google did not return a results page.")
+                    return all_urls
 
-        except PlaywrightTimeout:
-            log("Timeout — page took too long to load.")
-        except Exception as e:
-            log(f"Error: {e}")
-        finally:
-            page.close()
-            if browser:
+                for page_num in range(1, config.MAX_PAGES + 1):
+                    log(f"Scraping page {page_num} of {config.MAX_PAGES}...")
+                    found = _extract_links(page)
+                    new   = [u for u in found if u not in seen]
+                    seen.update(new)
+                    all_urls.extend(new)
+                    log(f"Page {page_num}: +{len(new)} profiles found (total: {len(all_urls)})")
+
+                    if page_num >= config.MAX_PAGES:
+                        break
+                    next_url = _next_page_url(page)
+                    if not next_url:
+                        log("No more pages.")
+                        break
+                    time.sleep(random.uniform(1, 2))
+                    page.goto(next_url, wait_until="domcontentloaded", timeout=20000)
+                    time.sleep(random.uniform(1, 2))
+                    if _handle_captcha(page, log) and config.BROWSER_HEADLESS:
+                        break
+                    if not _results_loaded(page, log):
+                        log("Lost results page — stopping early.")
+                        break
+
+            except PlaywrightTimeout:
+                log("Timeout — page took too long to load.")
+            except Exception as e:
+                log(f"Error: {e}")
+            finally:
+                page.close()
                 browser.close()
+    except Exception as e:
+        log(f"Browser startup error: {e}")
+    finally:
+        _SEARCH_SEMAPHORE.release()
 
     log(f"Done — {len(all_urls)} profiles collected.")
     return all_urls

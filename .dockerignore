@@ -1,0 +1,12 @@
+browser_profile/
+output/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+note.txt
+run.ps1
+launch_chrome.bat
+n8n_json_filter.txt
