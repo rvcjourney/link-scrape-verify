@@ -396,8 +396,13 @@ function buildQueries() {
   for (const d of desigs)
     for (const c of comps)
       for (const l of locs) {
-        const q = [d, c, l].filter(Boolean).join(' ').trim();
-        if (q && !seen.has(q)) { seen.add(q); result.push(q); }
+        const parts = [];
+        if (d) parts.push(`"${d}"`);
+        if (c) parts.push(`"${c}"`);
+        if (l) parts.push(`"${l}"`);
+        if (!parts.length) continue;
+        const q = `site:linkedin.com/in/ ${parts.join(' ')}`;
+        if (!seen.has(q)) { seen.add(q); result.push(q); }
       }
   return result;
 }

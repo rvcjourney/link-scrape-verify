@@ -19,10 +19,12 @@ def is_chrome_debug_running() -> bool:
 
 
 def build_search_query(user_input: str) -> str:
-    cleaned = re.sub(r"site:\S+", "", user_input, flags=re.IGNORECASE).strip()
+    if re.search(r'site:', user_input, re.IGNORECASE):
+        return user_input.strip()
+    cleaned = user_input.strip()
     if "linkedin" not in cleaned.lower():
         cleaned += " linkedin"
-    return cleaned.strip()
+    return cleaned
 
 
 def run_search(query: str, log_fn=None) -> list[str]:
