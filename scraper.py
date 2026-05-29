@@ -1,7 +1,7 @@
 import re
 import threading
 from urllib.request import urlopen
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from rich.console import Console
 import config
 
