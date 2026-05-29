@@ -125,7 +125,7 @@ def send_webhook():
         wh = _req.post(
             WEBHOOK_URL,
             json={"query": query, "urls": urls},
-            timeout=60,
+            timeout=None,
         )
         wh.raise_for_status()
         return jsonify({"ok": True, "status": wh.status_code, "response": wh.json()})
