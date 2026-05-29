@@ -87,10 +87,15 @@ def search_log():
 
 @app.route("/search", methods=["POST"])
 def search():
-    data  = request.get_json(force=True)
-    query = (data.get("query") or "").strip()
-    sid   = (data.get("sid")   or "").strip()
-    if not query:
+    data    = request.get_json(force=True)
+    sid     = (data.get("sid") or "").strip()
+    queries = data.get("queries") or []
+    # backwards-compat: single query string
+    if not queries:
+        single = (data.get("query") or "").strip()
+        if single:
+            queries = [single]
+    if not queries:
         return jsonify({"error": "Query is empty"}), 400
 
     q = _make_queue(sid)
@@ -105,12 +110,20 @@ def search():
             pass
 
     try:
-        urls = run_search(query, log_fn=log_fn)
-        return jsonify({"urls": urls, "count": len(urls)})
+        all_urls, seen = [], set()
+        for i, query in enumerate(queries):
+            if len(queries) > 1:
+                log_fn(f"Search {i + 1}/{len(queries)}: {query}")
+            urls = run_search(query, log_fn=log_fn)
+            for u in urls:
+                if u not in seen:
+                    seen.add(u)
+                    all_urls.append(u)
+        return jsonify({"urls": all_urls, "count": len(all_urls)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        log_fn(None)  # sentinel — tells the SSE stream this search is done
+        log_fn(None)
         threading.Timer(15, _drop_queue, args=[sid]).start()
 
 

@@ -19,19 +19,37 @@
     }
     h1{font-size:1.4rem;font-weight:700;color:#0a66c2;margin-bottom:24px}
 
-    /* ── Search ── */
-    .search-row{display:flex;gap:10px;width:100%;max-width:820px;margin-bottom:14px}
-    input[type=text]{
-      flex:1;background:#fff;border:1px solid #d1d5db;border-radius:8px;
-      color:#111827;font-size:.95rem;padding:12px 16px;outline:none;transition:border-color .2s;
-      box-shadow:0 1px 3px rgba(0,0,0,.06);
+    /* ── Search Form ── */
+    .search-form{width:100%;max-width:820px;margin-bottom:14px}
+    .field-group{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+    .field-row{display:flex;flex-direction:column;gap:4px}
+    .field-label{font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em}
+    .tag-input{
+      display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+      background:#fff;border:1px solid #d1d5db;border-radius:8px;
+      padding:7px 12px;cursor:text;min-height:42px;
+      box-shadow:0 1px 3px rgba(0,0,0,.06);transition:border-color .2s;
     }
-    input[type=text]:focus{border-color:#0a66c2;box-shadow:0 0 0 3px rgba(10,102,194,.12)}
-    input[type=text]::placeholder{color:#9ca3af}
+    .tag-input:focus-within{border-color:#0a66c2;box-shadow:0 0 0 3px rgba(10,102,194,.12)}
+    .tag-input input{
+      border:none;outline:none;background:transparent;
+      font-size:.9rem;color:#111827;flex:1;min-width:100px;padding:2px 0;
+    }
+    .tag-input input::placeholder{color:#9ca3af}
+    .chip{
+      display:inline-flex;align-items:center;gap:4px;
+      background:#e8f0fe;color:#0a66c2;border-radius:999px;
+      padding:3px 10px 3px 12px;font-size:.78rem;font-weight:600;white-space:nowrap;
+    }
+    .chip-x{cursor:pointer;font-size:1rem;opacity:.5;line-height:1;padding-left:2px}
+    .chip-x:hover{opacity:1}
+    .combo-hint{font-size:.78rem;color:#9ca3af;margin-bottom:10px;min-height:18px}
+    .combo-hint strong{color:#0a66c2}
+    .search-bottom{display:flex;align-items:center;gap:12px}
     .btn{
       background:#0a66c2;color:#fff;border:none;border-radius:8px;
-      padding:0 22px;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .15s;
-      touch-action:manipulation;
+      padding:0 22px;height:42px;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .15s;
+      touch-action:manipulation;white-space:nowrap;
     }
     .btn:hover{background:#0856a8}
     .btn:disabled{opacity:.4;cursor:not-allowed}
@@ -160,7 +178,6 @@
       position:sticky;top:0;background:#f9fafb;
     }
     .sheet-table th:last-child{border-right:none}
-
     .sheet-table tbody tr{border-bottom:1px solid #f3f4f6}
     .sheet-table tbody tr:last-child{border-bottom:none}
     .sheet-table tbody tr:hover td{background:#fafbff}
@@ -171,32 +188,20 @@
       color:#374151;
     }
     .sheet-table td:last-child{border-right:none}
-
-    /* fixed columns */
     .col-chk{width:36px;min-width:36px;text-align:center;padding:10px 6px}
     .col-chk input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#0a66c2}
-    .col-num{
-      width:36px;min-width:36px;text-align:center;
-      color:#d1d5db;font-size:.75rem;font-weight:600;
-    }
-    .col-url{
-      min-width:200px;max-width:240px;
-    }
+    .col-num{width:36px;min-width:36px;text-align:center;color:#d1d5db;font-size:.75rem;font-weight:600}
+    .col-url{min-width:200px;max-width:240px}
     .col-url a{
       color:#0a66c2;text-decoration:none;font-size:.78rem;
       display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .col-url a:hover{text-decoration:underline}
-
-    /* cell content types */
     .cell-badge{
       display:inline-block;border:1px solid;border-radius:999px;
       padding:3px 11px;font-size:.72rem;font-weight:700;white-space:nowrap;
     }
-    .cell-text{
-      font-size:.78rem;color:#4b5563;line-height:1.55;
-      white-space:normal;min-width:180px;max-width:320px;
-    }
+    .cell-text{font-size:.78rem;color:#4b5563;line-height:1.55;white-space:normal;min-width:180px;max-width:320px}
     .cell-bullets{
       list-style:none;padding:0;margin:0;
       display:flex;flex-direction:column;gap:4px;
@@ -204,46 +209,33 @@
     }
     .cell-bullets li{
       font-size:.77rem;color:#4b5563;
-      padding-left:13px;position:relative;line-height:1.45;
-      white-space:normal;
+      padding-left:13px;position:relative;line-height:1.45;white-space:normal;
     }
     .cell-bullets li::before{content:'•';position:absolute;left:0;color:#d1d5db}
     .cell-empty{color:#e5e7eb;font-size:.8rem}
 
     /* ══════════════════════════════════════════
-       Mobile — driven by ResizeObserver (.app.mob)
-       Works inside iframes regardless of parent
-       viewport or iframe width setting.
+       Mobile
     ══════════════════════════════════════════ */
-    .app.mob { padding: 20px 12px 60px; }
-    .app.mob h1   { font-size: 1.1rem; margin-bottom: 16px; }
-
-    .app.mob .search-row { flex-direction: column; gap: 8px; }
-    .app.mob .btn        { height: 44px; width: 100%; border-radius: 8px; font-size: .95rem; }
-
-    .app.mob #status { font-size: .78rem; }
-
-    .app.mob .tabs-row    { flex-wrap: wrap; padding-bottom: 8px; row-gap: 8px; }
-    .app.mob .tabs-spacer { display: none; }
-    .app.mob .tab         { padding: 8px 14px; font-size: .8rem; }
-    .app.mob .webhook-btn {
-      order: 99; width: 100%; margin-left: 0;
-      border-radius: 8px; padding: 11px 16px; font-size: .88rem;
-    }
-
-    .app.mob .pane    { max-width: 100%; }
-
-    .app.mob .row     { padding: 10px; gap: 8px; }
-    .app.mob .row-num { display: none; }
-    .app.mob .row-url { font-size: .8rem; }
-    .app.mob .copy-btn{ padding: 4px 8px; font-size: .7rem; }
-
-    .app.mob .list-hdr { gap: 8px; }
-    .app.mob .copy-all { padding: 5px 10px; font-size: .74rem; }
-
-    .app.mob .sheet-wrap   { -webkit-overflow-scrolling: touch; border-radius: 8px; }
-    .app.mob .sheet-toolbar{ flex-wrap: wrap; gap: 8px; }
-    .app.mob .copy-sel-btn { width: 100%; text-align: center; }
+    .app.mob{padding:20px 12px 60px}
+    .app.mob h1{font-size:1.1rem;margin-bottom:16px}
+    .app.mob .btn{width:100%;border-radius:8px;font-size:.95rem}
+    .app.mob #status{font-size:.78rem}
+    .app.mob .tabs-row{flex-wrap:wrap;padding-bottom:8px;row-gap:8px}
+    .app.mob .tabs-spacer{display:none}
+    .app.mob .tab{padding:8px 14px;font-size:.8rem}
+    .app.mob .webhook-btn{order:99;width:100%;margin-left:0;border-radius:8px;padding:11px 16px;font-size:.88rem}
+    .app.mob .pane{max-width:100%}
+    .app.mob .row{padding:10px;gap:8px}
+    .app.mob .row-num{display:none}
+    .app.mob .row-url{font-size:.8rem}
+    .app.mob .copy-btn{padding:4px 8px;font-size:.7rem}
+    .app.mob .list-hdr{gap:8px}
+    .app.mob .copy-all{padding:5px 10px;font-size:.74rem}
+    .app.mob .sheet-wrap{-webkit-overflow-scrolling:touch;border-radius:8px}
+    .app.mob .sheet-toolbar{flex-wrap:wrap;gap:8px}
+    .app.mob .copy-sel-btn{width:100%;text-align:center}
+    .app.mob .search-bottom{flex-direction:column;align-items:stretch}
   </style>
 </head>
 <body>
@@ -251,11 +243,34 @@
 
 <h1>LinkedIn Profile Finder</h1>
 
-<div class="search-row">
-  <input id="q" type="text"
-    placeholder="e.g. Procurement manager Tata AutoComp Pune"
-    value=""/>
-  <button class="btn" id="btn" onclick="doSearch()">Search</button>
+<div class="search-form">
+  <div class="field-group">
+    <div class="field-row">
+      <div class="field-label">Designation</div>
+      <div class="tag-input" id="ti-desig" onclick="document.getElementById('inp-desig').focus()">
+        <div id="tags-desig"></div>
+        <input id="inp-desig" type="text" placeholder="e.g. Procurement Manager  (Enter to add)">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Company</div>
+      <div class="tag-input" id="ti-company" onclick="document.getElementById('inp-company').focus()">
+        <div id="tags-company"></div>
+        <input id="inp-company" type="text" placeholder="e.g. Tata AutoComp  (Enter to add)">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Location</div>
+      <div class="tag-input" id="ti-location" onclick="document.getElementById('inp-location').focus()">
+        <div id="tags-location"></div>
+        <input id="inp-location" type="text" placeholder="e.g. Mumbai  (Enter to add)">
+      </div>
+    </div>
+  </div>
+  <div class="combo-hint" id="comboHint"></div>
+  <div class="search-bottom">
+    <button class="btn" id="btn" onclick="doSearch()">Search</button>
+  </div>
 </div>
 
 <div id="status"></div>
@@ -300,19 +315,94 @@
 </div>
 
 <script>
-let allUrls = [];
+let allUrls   = [];
+let lastQueries = [];
 
-// ── Responsive: watch actual rendered width, works inside any iframe ──────────
-(function() {
+// ── Responsive ───────────────────────────────────────────────────────────────
+(function(){
   const app = document.querySelector('.app');
   const update = w => app.classList.toggle('mob', w <= 640);
   update(app.offsetWidth);
   new ResizeObserver(entries => update(entries[0].contentRect.width)).observe(app);
 })();
 
-document.getElementById('q').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+// ── Tag input state ───────────────────────────────────────────────────────────
+const tags = { desig: [], company: [], location: [] };
 
-// ── Tab switching ────────────────────────────────────────────────────────────
+function addTag(field, value) {
+  value = value.trim().replace(/,+$/, '');
+  if (!value || tags[field].includes(value)) return;
+  tags[field].push(value);
+  renderTags(field);
+  updateComboHint();
+}
+
+function removeTag(field, idx) {
+  tags[field].splice(idx, 1);
+  renderTags(field);
+  updateComboHint();
+}
+
+function renderTags(field) {
+  const container = document.getElementById('tags-' + field);
+  container.innerHTML = tags[field].map((t, i) =>
+    `<span class="chip">${esc(t)}<span class="chip-x" onclick="removeTag('${field}',${i})">&times;</span></span>`
+  ).join('');
+}
+
+function setupTagInput(field) {
+  const inp = document.getElementById('inp-' + field);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(field, inp.value);
+      inp.value = '';
+    } else if (e.key === 'Backspace' && !inp.value && tags[field].length) {
+      removeTag(field, tags[field].length - 1);
+    }
+  });
+  inp.addEventListener('blur', () => {
+    if (inp.value.trim()) { addTag(field, inp.value); inp.value = ''; }
+  });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    text.split(/[,\n]+/).forEach(v => addTag(field, v));
+  });
+}
+
+['desig','company','location'].forEach(setupTagInput);
+
+function updateComboHint() {
+  const d = tags.desig.length    || 1;
+  const c = tags.company.length  || 1;
+  const l = tags.location.length || 1;
+  const total = d * c * l;
+  const hint  = document.getElementById('comboHint');
+  const hasAny = tags.desig.length || tags.company.length || tags.location.length;
+  if (hasAny && total > 1) {
+    hint.innerHTML = `Will run <strong>${total}</strong> search combination${total !== 1 ? 's' : ''}`;
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function buildQueries() {
+  const desigs  = tags.desig.length    ? tags.desig    : [''];
+  const comps   = tags.company.length  ? tags.company  : [''];
+  const locs    = tags.location.length ? tags.location : [''];
+  const result  = [];
+  const seen    = new Set();
+  for (const d of desigs)
+    for (const c of comps)
+      for (const l of locs) {
+        const q = [d, c, l].filter(Boolean).join(' ').trim();
+        if (q && !seen.has(q)) { seen.add(q); result.push(q); }
+      }
+  return result;
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t  => t.classList.remove('active'));
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
@@ -320,10 +410,15 @@ function switchTab(name) {
   document.getElementById('pane-' + name).classList.add('active');
 }
 
-// ── Search ───────────────────────────────────────────────────────────────────
+// ── Search ────────────────────────────────────────────────────────────────────
 async function doSearch() {
-  const query = document.getElementById('q').value.trim();
-  if (!query) return;
+  const queries = buildQueries();
+  if (!queries.length) {
+    setStatus('error', 'Add at least one Designation, Company, or Location.');
+    return;
+  }
+  lastQueries = queries;
+
   document.getElementById('btn').disabled = true;
   document.getElementById('list').innerHTML = '';
   document.getElementById('listHdr').style.display = 'none';
@@ -337,7 +432,7 @@ async function doSearch() {
 
   const sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
   const logSource = new EventSource(`/search-log?sid=${sid}`);
-  logSource.onmessage = (e) => {
+  logSource.onmessage = e => {
     const d = JSON.parse(e.data);
     if (d.done) { logSource.close(); return; }
     if (d.msg)  setStatus('loading', d.msg);
@@ -345,13 +440,17 @@ async function doSearch() {
   logSource.onerror = () => logSource.close();
 
   try {
-    const res  = await fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query, sid})});
+    const res  = await fetch('/search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ queries, sid })
+    });
     const data = await res.json();
     logSource.close();
     if (!res.ok) throw new Error(data.error || 'Server error');
     allUrls = data.urls || [];
     if (!allUrls.length) {
-      setStatus('error', 'No profiles found. Try a different query.');
+      setStatus('error', 'No profiles found. Try different search terms.');
       document.getElementById('btn').disabled = false;
       return;
     }
@@ -359,7 +458,8 @@ async function doSearch() {
     document.getElementById('tabsRow').style.display = 'flex';
     document.getElementById('webhookBtn').disabled = true;
     document.getElementById('badge-profiles').textContent = allUrls.length;
-    setStatus('ok', `Found ${allUrls.length} profile${allUrls.length !== 1 ? 's' : ''}. Select profiles to send to webhook.`);
+    const combLabel = queries.length > 1 ? ` across ${queries.length} searches` : '';
+    setStatus('ok', `Found ${allUrls.length} profile${allUrls.length !== 1 ? 's' : ''}${combLabel}. Select profiles to send to webhook.`);
   } catch(e) {
     logSource.close();
     setStatus('error', e.message);
@@ -367,7 +467,7 @@ async function doSearch() {
   document.getElementById('btn').disabled = false;
 }
 
-// ── Render URL list ──────────────────────────────────────────────────────────
+// ── Render URL list ───────────────────────────────────────────────────────────
 function renderList(urls) {
   document.getElementById('list').innerHTML = urls.map((url, i) => `
     <div class="row" id="prow-${i}">
@@ -402,11 +502,9 @@ function updateProfileSelCount() {
   const master  = document.getElementById('chkAllProfiles');
   const lbl     = document.getElementById('listCount');
   const whBtn   = document.getElementById('webhookBtn');
-
   if (lbl) lbl.textContent = checked.length
     ? `${checked.length} of ${all.length} selected`
     : `${all.length} profile${all.length !== 1 ? 's' : ''}`;
-
   if (master) {
     master.indeterminate = checked.length > 0 && checked.length < all.length;
     master.checked = all.length > 0 && checked.length === all.length;
@@ -414,10 +512,10 @@ function updateProfileSelCount() {
   if (whBtn) whBtn.disabled = checked.length === 0;
 }
 
-// ── Send to Webhook ──────────────────────────────────────────────────────────
+// ── Send to Webhook ───────────────────────────────────────────────────────────
 async function sendWebhook() {
-  const query       = document.getElementById('q').value.trim();
-  const btn         = document.getElementById('webhookBtn');
+  const query        = lastQueries.join('; ');
+  const btn          = document.getElementById('webhookBtn');
   const selectedUrls = [...document.querySelectorAll('.profile-chk:checked')].map(c => c.dataset.url);
   if (!selectedUrls.length) return;
 
@@ -426,7 +524,11 @@ async function sendWebhook() {
   setStatus('loading', `Sending ${selectedUrls.length} profile${selectedUrls.length !== 1 ? 's' : ''} to webhook...`);
 
   try {
-    const res  = await fetch('/send-webhook', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query, urls: selectedUrls})});
+    const res  = await fetch('/send-webhook', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ query, urls: selectedUrls })
+    });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Webhook error');
 
@@ -443,45 +545,35 @@ async function sendWebhook() {
     setStatus('error', `Webhook failed: ${e.message}`);
     btn.textContent = 'Send to Webhook';
   }
-  updateProfileSelCount(); // re-enable based on current selection
+  updateProfileSelCount();
 }
 
-// ── Parse text blob → ordered [ [title, value] ] pairs ──────────────────────
+// ── Parse text blob ───────────────────────────────────────────────────────────
 function parseOutput(text) {
   text = text.replace(/\r\n/g, '\n')
              .replace(/[ \t]+$/gm, '')
              .replace(/\n-{3,}\n?/g, '\n\n');
-
   const TITLE_RE = /^([A-Z][^:,.\n]{0,60}):\s*(.*)$/;
   const sections = [];
-  let curTitle = null;
-  let curLines = [];
-
+  let curTitle = null, curLines = [];
   const flush = () => {
     if (curTitle === null) return;
     const body = curLines.join('\n').trim();
     if (body) sections.push([curTitle, body]);
     curTitle = null; curLines = [];
   };
-
   for (const raw of text.split('\n')) {
     const line = raw.trimEnd();
     if (/^[-=*]{3,}$/.test(line.trim())) continue;
     const isBullet = line.trimStart().startsWith('-') || line.trimStart().startsWith('*');
     const m = !isBullet ? TITLE_RE.exec(line) : null;
-    if (m) {
-      flush();
-      curTitle = m[1].trim();
-      if (m[2].trim()) curLines = [m[2].trim()];
-    } else if (curTitle !== null) {
-      curLines.push(line);
-    }
+    if (m) { flush(); curTitle = m[1].trim(); if (m[2].trim()) curLines = [m[2].trim()]; }
+    else if (curTitle !== null) { curLines.push(line); }
   }
   flush();
   return sections;
 }
 
-// ── Score color ──────────────────────────────────────────────────────────────
 function scoreColor(val) {
   const v = (val || '').toLowerCase();
   if (v.includes('high')   || v.includes('strong'))   return '#16a34a';
@@ -490,43 +582,30 @@ function scoreColor(val) {
   return null;
 }
 
-// ── Render a cell value ──────────────────────────────────────────────────────
+const WIDE_COLS = /why\s*relevant|reasoning|rationale|recommendation|analysis|description/i;
+
+function colStyle(name) {
+  return WIDE_COLS.test(name)
+    ? 'min-width:320px;max-width:520px;white-space:normal'
+    : 'min-width:80px;max-width:160px;white-space:normal';
+}
+
 function renderCell(value, colName) {
   if (!value) return `<span class="cell-empty">—</span>`;
-
   const lines    = value.split('\n').map(l => l.trim()).filter(Boolean);
   const bullets  = lines.filter(l => l.startsWith('-'));
   const isSingle = lines.length === 1;
   const wordCount = lines[0] ? lines[0].split(/\s+/).length : 0;
   const isWide   = WIDE_COLS.test(colName || '');
-
-  // Score badge
   const c = scoreColor(value);
   if (isSingle && wordCount <= 5 && c)
     return `<span class="cell-badge" style="border-color:${c};color:${c};background:${c}18">${esc(value)}</span>`;
-
-  // Bullet list (wide columns only — narrow cols show truncated text)
   if (isWide && bullets.length && bullets.length === lines.length)
-    return `<ul class="cell-bullets">${
-      bullets.map(b => `<li>${esc(b.slice(1).trim())}</li>`).join('')
-    }</ul>`;
-
-  // Plain text — all columns wrap
+    return `<ul class="cell-bullets">${bullets.map(b => `<li>${esc(b.slice(1).trim())}</li>`).join('')}</ul>`;
   return `<span class="cell-text">${esc(value)}</span>`;
 }
 
-// ── Column width policy ──────────────────────────────────────────────────────
-const WIDE_COLS = /why\s*relevant|reasoning|rationale|recommendation|analysis|description/i;
-
-function colStyle(name) {
-  if (WIDE_COLS.test(name))
-    return 'min-width:320px;max-width:520px;white-space:normal';
-  return 'min-width:80px;max-width:160px;white-space:normal';
-}
-
-// ── Render full sheet table ──────────────────────────────────────────────────
 function renderSheet(items) {
-  // Parse all items
   const parsed = items.map(item => {
     const secs = item.output
       ? parseOutput(item.output)
@@ -534,23 +613,17 @@ function renderSheet(items) {
                .map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v, null, 2)]);
     return { url: item.url || '', map: Object.fromEntries(secs), order: secs.map(([k]) => k) };
   });
-
-  // Collect columns in order of first appearance
-  const colSeen = new Set();
-  const cols = [];
+  const colSeen = new Set(), cols = [];
   for (const { order } of parsed)
     for (const k of order)
       if (!colSeen.has(k)) { colSeen.add(k); cols.push(k); }
 
-  // Table header
   let html = `<div class="sheet-wrap"><table class="sheet-table" id="sheetTable"><thead><tr>
     <th class="col-chk"><input type="checkbox" id="chkAll" title="Select all" onchange="toggleAll(this)"></th>
     <th class="col-num">#</th>
     <th style="min-width:180px;max-width:220px">URL</th>
     ${cols.map(c => `<th style="${colStyle(c)}">${esc(c)}</th>`).join('')}
   </tr></thead><tbody>`;
-
-  // Rows
   parsed.forEach(({ url, map }, i) => {
     html += `<tr>
       <td class="col-chk"><input type="checkbox" class="row-chk" data-url="${esc(url)}" onchange="updateSelCount()"></td>
@@ -559,12 +632,10 @@ function renderSheet(items) {
       ${cols.map(c => `<td style="${colStyle(c)}">${renderCell(map[c] || '', c)}</td>`).join('')}
     </tr>`;
   });
-
   html += `</tbody></table></div>`;
   return html;
 }
 
-// ── Checkbox / copy selection ────────────────────────────────────────────────
 function toggleAll(masterChk) {
   document.querySelectorAll('.row-chk').forEach(c => c.checked = masterChk.checked);
   updateSelCount();
@@ -588,13 +659,12 @@ function copySelected() {
   if (!urls.length) return;
   copyToClipboard(urls.join('\n')).then(() => {
     const btn = document.getElementById('copySelBtn');
-    btn.textContent = 'Copied!';
-    btn.classList.add('ok');
+    btn.textContent = 'Copied!'; btn.classList.add('ok');
     setTimeout(() => { btn.textContent = 'Copy Selected URLs'; btn.classList.remove('ok'); }, 1800);
   });
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(type, msg) {
   const el = document.getElementById('status');
   if (type === 'loading') el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
@@ -605,11 +675,9 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Works on HTTPS (clipboard API), plain HTTP, and mobile (execCommand + iOS range)
 function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
+  if (navigator.clipboard && window.isSecureContext)
     return navigator.clipboard.writeText(text).catch(() => _execCopy(text));
-  }
   return _execCopy(text);
 }
 function _execCopy(text) {
@@ -619,18 +687,12 @@ function _execCopy(text) {
     ta.setAttribute('readonly', '');
     ta.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px';
     document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, 99999); // iOS
+    ta.focus(); ta.select(); ta.setSelectionRange(0, 99999);
     const ok = document.execCommand('copy');
     document.body.removeChild(ta);
-    if (!ok) return Promise.reject(new Error('copy failed'));
-    return Promise.resolve();
-  } catch(e) {
-    return Promise.reject(e);
-  }
+    return ok ? Promise.resolve() : Promise.reject(new Error('execCommand failed'));
+  } catch(e) { return Promise.reject(e); }
 }
-
 function copyOne(btn, url) {
   copyToClipboard(url)
     .then(() => {
@@ -649,6 +711,6 @@ function copyAll() {
     .catch(() => setStatus('error', 'Copy failed — try selecting text manually.'));
 }
 </script>
-</div><!-- /.app -->
+</div>
 </body>
 </html>
