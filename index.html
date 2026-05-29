@@ -586,7 +586,7 @@ function updateSelCount() {
 function copySelected() {
   const urls = [...document.querySelectorAll('.row-chk:checked')].map(c => c.dataset.url);
   if (!urls.length) return;
-  navigator.clipboard.writeText(urls.join('\n')).then(() => {
+  copyToClipboard(urls.join('\n')).then(() => {
     const btn = document.getElementById('copySelBtn');
     btn.textContent = 'Copied!';
     btn.classList.add('ok');
@@ -604,14 +604,29 @@ function setStatus(type, msg) {
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// Works on both HTTPS (clipboard API) and plain HTTP (execCommand fallback)
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+  return Promise.resolve();
+}
+
 function copyOne(btn, url) {
-  navigator.clipboard.writeText(url).then(() => {
+  copyToClipboard(url).then(() => {
     btn.textContent = 'Copied!'; btn.classList.add('ok');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 1500);
   });
 }
 function copyAll() {
-  navigator.clipboard.writeText(allUrls.join('\n')).then(() => {
+  copyToClipboard(allUrls.join('\n')).then(() => {
     const b = document.querySelector('.copy-all');
     b.textContent = 'Copied!';
     setTimeout(() => b.textContent = 'Copy All URLs', 1500);
