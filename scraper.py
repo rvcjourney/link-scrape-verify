@@ -190,6 +190,13 @@ _ICP_BLOCKED = {
     # Social / professional networks
     'linkedin.com','facebook.com','twitter.com','instagram.com','youtube.com',
     'quora.com','reddit.com','medium.com','pinterest.com','t.me','telegram.org',
+    'tiktok.com','snapchat.com',
+    # Market research / rating sites (not company websites)
+    'mordorintelligence.com','grandviewresearch.com','statista.com','ibisworld.com',
+    'marketsandmarkets.com','businesswire.com','prnewswire.com',
+    'greatplacetowork.in','glassdoor.com','ambitionbox.com',
+    # Credit rating / financial reports
+    'icra.in','crisil.com','careratings.com',
     # Encyclopedias / wikis
     'wikipedia.org','wikihow.com','wikimedia.org',
     # Indian B2B directories & listing sites
@@ -276,7 +283,14 @@ def _domain_ok(domain: str) -> bool:
 def _is_educational_snippet(snippet: str) -> bool:
     """Return True if snippet looks like a blog/article, not a company page."""
     s = snippet.lower()
-    if re.search(r'\b(how to|what is|types of|definition|explained|a guide|tutorial|learn about|overview of|working principle|diagram of)\b', s):
+    # Date-stamped blog posts: "26 Mar, 2024 ·"
+    if re.search(r'\b\d{1,2}\s+\w{3,9},?\s+20\d{2}\s*[·•]', s):
+        return True
+    # Explainer/educational phrases
+    if re.search(r'\b(how to|what is|types of|definition|explained|a guide|tutorial|learn about|overview of|working principle|diagram of|how does|how a)\b', s):
+        return True
+    # Titles listing educational topics: "Types, Parts, Function, Diagram"
+    if re.search(r'\b(function|components|parts|diagram|working principle)\b.{0,40}\b(function|components|parts|diagram|types)\b', s):
         return True
     return False
 
