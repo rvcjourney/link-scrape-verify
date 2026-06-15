@@ -54,15 +54,21 @@ _STATE_CITIES = {
 def _fetch_results(query: str, max_results: int, log_fn=None) -> list[dict]:
     """Query SearXNG (Bing + Brave + DDG); fall back to DDG directly if unavailable."""
     def _log(msg):
-        console.print(msg)
+        # avoid double-print: if log_fn is the outer log() it already calls console.print
         if log_fn:
-            log_fn(re.sub(r'\[/?[^\]]*\]', '', msg).strip())
+            log_fn(msg)
+        else:
+            console.print(msg)
+
+    # SearXNG / Bing / Brave don't honour the site: operator via API —
+    # convert it to a plain text keyword so they still prefer those URLs.
+    searxng_q = re.sub(r'site:(\S+)', lambda m: m.group(1), query, flags=re.IGNORECASE).strip()
 
     try:
         resp = _http.get(
             f"{_SEARXNG_URL}/search",
             params={
-                "q":        query,
+                "q":        searxng_q,
                 "format":   "json",
                 "engines":  "bing,brave,duckduckgo",
                 "language": "en-IN",
