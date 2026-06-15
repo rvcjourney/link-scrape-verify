@@ -29,8 +29,13 @@ _CITY_ALIASES = {
 }
 
 
-def _fetch_results(query: str, max_results: int) -> list[dict]:
+def _fetch_results(query: str, max_results: int, log_fn=None) -> list[dict]:
     """Query SearXNG (Bing + Brave + DDG); fall back to DDG directly if unavailable."""
+    def _log(msg):
+        console.print(msg)
+        if log_fn:
+            log_fn(re.sub(r'\[/?[^\]]*\]', '', msg).strip())
+
     try:
         resp = _http.get(
             f"{_SEARXNG_URL}/search",
@@ -45,6 +50,7 @@ def _fetch_results(query: str, max_results: int) -> list[dict]:
         if resp.status_code == 200:
             raw = resp.json().get("results", [])
             if raw:
+                _log(f"[green]SearXNG[/green]: {len(raw)} results (Bing + Brave + DDG)")
                 return [
                     {
                         "url":   r.get("url",     ""),
@@ -53,13 +59,17 @@ def _fetch_results(query: str, max_results: int) -> list[dict]:
                     }
                     for r in raw[:max_results]
                 ]
-    except Exception:
-        pass
+            _log("[yellow]SearXNG returned 0 results — falling back to DDG[/yellow]")
+        else:
+            _log(f"[yellow]SearXNG HTTP {resp.status_code} — falling back to DDG[/yellow]")
+    except Exception as e:
+        _log(f"[yellow]SearXNG unavailable ({e}) — falling back to DDG[/yellow]")
 
     # Fallback: DDG directly
     try:
         with DDGS() as ddgs:
             raw = ddgs.text(query, max_results=max_results, region="in-en") or []
+        _log(f"DDG fallback: {len(raw)} results")
         return [
             {
                 "url":   r.get("href",  ""),
@@ -245,7 +255,7 @@ def run_icp_search(query: str, log_fn=None, location: str = "") -> list[dict]:
 
     try:
         log("Searching for companies (Bing + Brave + DDG)...")
-        for r in _fetch_results(enhanced, max_results=config.MAX_PAGES * 10):
+        for r in _fetch_results(enhanced, max_results=config.MAX_PAGES * 10, log_fn=log):
             url = (r.get('url') or '').split('?')[0]
             if not url.startswith('http'):
                 continue
@@ -317,7 +327,7 @@ def run_search(query: str, log_fn=None, location: str = "", company: str = "") -
                 log(f"Few results — retrying with broader query (attempt {attempt})...")
 
             before = len(all_urls)
-            for r in _fetch_results(q, max_results=config.MAX_PAGES * 15):
+            for r in _fetch_results(q, max_results=config.MAX_PAGES * 15, log_fn=log):
                 url = (r.get('url') or '').split('?')[0]
                 if not re.search(r'linkedin\.com/in/[^/?\s]+', url):
                     continue
