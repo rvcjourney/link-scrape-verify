@@ -28,6 +28,28 @@ _CITY_ALIASES = {
     "gurgaon":    ["gurgaon", "gurugram"],
 }
 
+# Indian state → major cities (so "Maharashtra" matches "Pune", "Mumbai", etc.)
+_STATE_CITIES = {
+    "maharashtra":    ["maharashtra", "mumbai", "pune", "nagpur", "nashik", "aurangabad", "thane", "navi mumbai", "solapur", "kolhapur"],
+    "gujarat":        ["gujarat", "ahmedabad", "surat", "vadodara", "rajkot", "gandhinagar", "bhavnagar"],
+    "karnataka":      ["karnataka", "bangalore", "bengaluru", "mysore", "hubli", "mangalore", "belgaum"],
+    "tamil nadu":     ["tamil nadu", "chennai", "coimbatore", "madurai", "tiruchirappalli", "salem"],
+    "telangana":      ["telangana", "hyderabad", "secunderabad", "warangal"],
+    "andhra pradesh": ["andhra pradesh", "visakhapatnam", "vijayawada", "guntur", "tirupati"],
+    "delhi":          ["delhi", "new delhi", "ncr", "noida", "gurugram", "gurgaon", "faridabad"],
+    "haryana":        ["haryana", "gurugram", "gurgaon", "faridabad", "panipat", "ambala"],
+    "rajasthan":      ["rajasthan", "jaipur", "jodhpur", "udaipur", "kota", "ajmer"],
+    "punjab":         ["punjab", "ludhiana", "amritsar", "chandigarh", "jalandhar"],
+    "uttar pradesh":  ["uttar pradesh", "noida", "lucknow", "kanpur", "agra", "ghaziabad", "meerut", "varanasi"],
+    "west bengal":    ["west bengal", "kolkata", "calcutta", "durgapur", "howrah"],
+    "madhya pradesh": ["madhya pradesh", "indore", "bhopal", "jabalpur", "gwalior"],
+    "odisha":         ["odisha", "bhubaneswar", "cuttack", "rourkela"],
+    "jharkhand":      ["jharkhand", "ranchi", "jamshedpur", "dhanbad"],
+    "uttarakhand":    ["uttarakhand", "dehradun", "haridwar", "roorkee"],
+    "himachal pradesh": ["himachal pradesh", "shimla", "manali", "baddi"],
+    "goa":            ["goa", "panaji", "vasco"],
+}
+
 
 def _fetch_results(query: str, max_results: int, log_fn=None) -> list[dict]:
     """Query SearXNG (Bing + Brave + DDG); fall back to DDG directly if unavailable."""
@@ -95,8 +117,14 @@ def _location_matches(location: str, snippet: str) -> bool:
         return True
     loc = location.lower().strip()
     s   = snippet.lower()
-    aliases = _CITY_ALIASES.get(loc, [loc])
-    return any(a in s for a in aliases)
+    # city aliases (Bangalore ↔ Bengaluru etc.)
+    if loc in _CITY_ALIASES:
+        return any(a in s for a in _CITY_ALIASES[loc])
+    # state → all major cities in that state
+    if loc in _STATE_CITIES:
+        return any(c in s for c in _STATE_CITIES[loc])
+    # default: exact substring match
+    return loc in s
 
 
 def _company_matches(company: str, snippet: str) -> bool:
@@ -274,10 +302,7 @@ def run_icp_search(query: str, log_fn=None, location: str = "") -> list[dict]:
             snippet = ((r.get('title') or '') + ' ' + (r.get('body') or '')).strip()
             if _is_directory_snippet(snippet):
                 continue
-            if not _icp_relevant(query, snippet):
-                continue
-            if location and not _location_matches(location, snippet):
-                continue
+            # no relevance or location post-filtering — query itself handles matching
             quality = any(domain.endswith(t) for t in _QUALITY_TLDS)
             seen_domains.add(domain)
             results.append({
