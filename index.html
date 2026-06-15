@@ -214,6 +214,77 @@
     .cell-bullets li::before{content:'•';position:absolute;left:0;color:#d1d5db}
     .cell-empty{color:#e5e7eb;font-size:.8rem}
 
+    /* ── Page Tabs (LinkedIn / ICP) ── */
+    .page-tabs{
+      display:flex;gap:0;width:100%;max-width:820px;
+      border-bottom:2px solid #e5e7eb;margin-bottom:24px;
+    }
+    .page-tab{
+      padding:10px 28px;font-size:.92rem;font-weight:700;cursor:pointer;
+      color:#9ca3af;border-bottom:3px solid transparent;margin-bottom:-2px;
+      transition:color .15s,border-color .15s;user-select:none;
+    }
+    .page-tab:hover{color:#374151}
+    .page-tab.active{color:#0a66c2;border-bottom-color:#0a66c2}
+    .page-section{width:100%;display:none;flex-direction:column;align-items:center}
+    .page-section.active{display:flex}
+
+    /* ── ICP Search ── */
+    .icp-form{width:100%;max-width:820px;margin-bottom:14px}
+    .icp-search-row{display:flex;gap:10px;margin-bottom:14px}
+    .icp-search-row input{
+      flex:1;background:#fff;border:1px solid #d1d5db;border-radius:8px;
+      color:#111827;font-size:.95rem;padding:12px 16px;outline:none;
+      box-shadow:0 1px 3px rgba(0,0,0,.06);transition:border-color .2s;
+    }
+    .icp-search-row input:focus{border-color:#0a66c2;box-shadow:0 0 0 3px rgba(10,102,194,.12)}
+    .icp-search-row input::placeholder{color:#9ca3af}
+    .icp-hint{font-size:.78rem;color:#9ca3af;margin-bottom:4px}
+
+    /* ── ICP Toolbar ── */
+    .icp-toolbar{
+      display:flex;align-items:center;gap:10px;
+      width:100%;max-width:820px;margin-bottom:10px;flex-wrap:wrap;
+    }
+    .icp-toolbar-left{display:flex;align-items:center;gap:8px;flex:1}
+    .icp-toolbar-left input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#0a66c2;flex-shrink:0}
+    .icp-toolbar span{font-size:.8rem;color:#9ca3af}
+    .icp-export-btn{
+      background:#16a34a;color:#fff;border:none;border-radius:6px;
+      padding:4px 14px;font-size:.76rem;font-weight:600;cursor:pointer;
+      transition:background .15s;white-space:nowrap;
+    }
+    .icp-export-btn:hover{background:#15803d}
+    .icp-export-btn:disabled{opacity:.4;cursor:not-allowed}
+
+    /* ── ICP Results ── */
+    .icp-results{width:100%;max-width:820px}
+    .icp-card{
+      background:#fff;border:1px solid #e5e7eb;border-radius:8px;
+      padding:14px 16px;margin-bottom:10px;
+      box-shadow:0 1px 2px rgba(0,0,0,.04);transition:border-color .15s;
+    }
+    .icp-card:hover{border-color:#0a66c2}
+    .icp-card.selected{border-color:#0a66c2;background:#f0f7ff}
+    .icp-card-top{display:flex;align-items:flex-start;gap:10px}
+    .icp-chk{width:15px;height:15px;cursor:pointer;accent-color:#0a66c2;flex-shrink:0;margin-top:2px}
+    .icp-num{color:#d1d5db;font-size:.75rem;min-width:22px;text-align:right;flex-shrink:0;padding-top:2px}
+    .icp-card-body{flex:1;min-width:0}
+    .icp-title{font-size:.88rem;font-weight:700;color:#111827;margin-bottom:3px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .icp-url{font-size:.78rem;color:#0a66c2;text-decoration:none;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-bottom:5px}
+    .icp-url:hover{text-decoration:underline}
+    .icp-desc{font-size:.78rem;color:#6b7280;line-height:1.5;
+      display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .icp-copy{
+      background:#fff;border:1px solid #e5e7eb;color:#9ca3af;
+      border-radius:5px;padding:3px 10px;font-size:.73rem;cursor:pointer;
+      transition:border-color .15s,color .15s;white-space:nowrap;flex-shrink:0;
+    }
+    .icp-copy:hover{border-color:#0a66c2;color:#0a66c2}
+    .icp-copy.ok{border-color:#16a34a;color:#16a34a}
+
     /* ══════════════════════════════════════════
        Mobile
     ══════════════════════════════════════════ */
@@ -241,7 +312,16 @@
 <body>
 <div class="app">
 
-<h1>LinkedIn Profile Finder</h1>
+<h1>Lead Finder</h1>
+
+<!-- Page-level tabs -->
+<div class="page-tabs">
+  <div class="page-tab active" id="ptab-linkedin" onclick="switchPage('linkedin')">LinkedIn</div>
+  <div class="page-tab"        id="ptab-icp"      onclick="switchPage('icp')">ICP Finder</div>
+</div>
+
+<!-- ══ LinkedIn Section ══ -->
+<div class="page-section active" id="page-linkedin">
 
 <div class="search-form">
   <div class="field-group">
@@ -284,7 +364,7 @@
     Analysis <span class="tab-badge" id="badge-analysis">–</span>
   </div>
   <div class="tabs-spacer"></div>
-  <button class="webhook-btn" id="webhookBtn" onclick="sendWebhook()">Send to Webhook</button>
+  <button class="webhook-btn" id="webhookBtn" onclick="sendWebhook()">Analyze</button>
 </div>
 
 <!-- Profiles pane -->
@@ -399,10 +479,13 @@ function buildQueries() {
         const parts = [];
         if (d) parts.push(`"${d}"`);
         if (c) parts.push(`"${c}"`);
-        if (l) parts.push(`"${l}"`);
+        if (l) parts.push(l);
         if (!parts.length) continue;
         const q = `site:linkedin.com/in/ ${parts.join(' ')}`;
-        if (!seen.has(q)) { seen.add(q); result.push(q); }
+        if (!seen.has(q)) {
+          seen.add(q);
+          result.push({ query: q, location: l, company: c });
+        }
       }
   return result;
 }
@@ -417,12 +500,12 @@ function switchTab(name) {
 
 // ── Search ────────────────────────────────────────────────────────────────────
 async function doSearch() {
-  const queries = buildQueries();
-  if (!queries.length) {
+  const combinations = buildQueries();
+  if (!combinations.length) {
     setStatus('error', 'Add at least one Designation, Company, or Location.');
     return;
   }
-  lastQueries = queries;
+  lastQueries = combinations.map(c => c.query);
 
   document.getElementById('btn').disabled = true;
   document.getElementById('list').innerHTML = '';
@@ -448,7 +531,7 @@ async function doSearch() {
     const res  = await fetch('/search', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ queries, sid })
+      body: JSON.stringify({ combinations, sid })
     });
     const data = await res.json();
     logSource.close();
@@ -463,7 +546,7 @@ async function doSearch() {
     document.getElementById('tabsRow').style.display = 'flex';
     document.getElementById('webhookBtn').disabled = true;
     document.getElementById('badge-profiles').textContent = allUrls.length;
-    const combLabel = queries.length > 1 ? ` across ${queries.length} searches` : '';
+    const combLabel = combinations.length > 1 ? ` across ${combinations.length} searches` : '';
     setStatus('ok', `Found ${allUrls.length} profile${allUrls.length !== 1 ? 's' : ''}${combLabel}. Select profiles to send to webhook.`);
   } catch(e) {
     logSource.close();
@@ -715,7 +798,277 @@ function copyAll() {
     })
     .catch(() => setStatus('error', 'Copy failed — try selecting text manually.'));
 }
+
+// ── Page switching ────────────────────────────────────────────────────────────
+function switchPage(name) {
+  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('ptab-' + name).classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ── ICP Tag inputs ────────────────────────────────────────────────────────────
+const icpTags = { 'icp-product': [], 'icp-location': [], 'icp-type': [] };
+
+function addIcpTag(field, value) {
+  value = value.trim().replace(/,+$/, '');
+  if (!value || icpTags[field].includes(value)) return;
+  icpTags[field].push(value);
+  renderIcpTags(field);
+  updateIcpComboHint();
+}
+function removeIcpTag(field, idx) {
+  icpTags[field].splice(idx, 1);
+  renderIcpTags(field);
+  updateIcpComboHint();
+}
+function renderIcpTags(field) {
+  const container = document.getElementById('tags-' + field);
+  container.innerHTML = icpTags[field].map((t, i) =>
+    `<span class="chip">${esc(t)}<span class="chip-x" onclick="removeIcpTag('${field}',${i})">&times;</span></span>`
+  ).join('');
+}
+function setupIcpTagInput(field) {
+  const inp = document.getElementById('inp-' + field);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault(); addIcpTag(field, inp.value); inp.value = '';
+    } else if (e.key === 'Backspace' && !inp.value && icpTags[field].length) {
+      removeIcpTag(field, icpTags[field].length - 1);
+    }
+  });
+  inp.addEventListener('blur', () => {
+    if (inp.value.trim()) { addIcpTag(field, inp.value); inp.value = ''; }
+  });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    (e.clipboardData || window.clipboardData).getData('text')
+      .split(/[,\n]+/).forEach(v => addIcpTag(field, v));
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  ['icp-product','icp-location','icp-type'].forEach(setupIcpTagInput);
+});
+
+function updateIcpComboHint() {
+  const p = icpTags['icp-product'].length  || 1;
+  const l = icpTags['icp-location'].length || 1;
+  const t = icpTags['icp-type'].length     || 1;
+  const total = p * l * t;
+  const hint  = document.getElementById('icpComboHint');
+  const hasAny = p > 1 || l > 1 || t > 1 ||
+    icpTags['icp-product'].length || icpTags['icp-location'].length || icpTags['icp-type'].length;
+  hint.innerHTML = (hasAny && total > 1)
+    ? `Will run <strong>${total}</strong> search combination${total !== 1 ? 's' : ''}`
+    : '';
+}
+
+function buildIcpCombinations() {
+  const products  = icpTags['icp-product'].length  ? icpTags['icp-product']  : [''];
+  const locations = icpTags['icp-location'].length ? icpTags['icp-location'] : [''];
+  const types     = icpTags['icp-type'].length     ? icpTags['icp-type']     : [''];
+  const result = [], seen = new Set();
+  for (const p of products)
+    for (const l of locations)
+      for (const t of types) {
+        const parts = [];
+        if (p) parts.push(`"${p}"`);
+        if (t) parts.push(t);
+        if (l) parts.push(l);
+        const q = parts.join(' ').trim();
+        if (q && !seen.has(q)) { seen.add(q); result.push({ query: q, location: l }); }
+      }
+  return result;
+}
+
+function setIcpStatus(type, msg) {
+  const el = document.getElementById('icpStatus');
+  if (type === 'loading') el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  else if (type === 'error') el.innerHTML = `<span style="color:#dc2626">${msg}</span>`;
+  else el.innerHTML = `<span style="color:#16a34a">${msg}</span>`;
+}
+
+async function doIcpSearch() {
+  const combinations = buildIcpCombinations();
+  if (!combinations.length) {
+    setIcpStatus('error', 'Add at least one Product, Location, or Company Type.');
+    return;
+  }
+  const btn = document.getElementById('icpBtn');
+  btn.disabled = true;
+  document.getElementById('icpResults').innerHTML = '';
+  document.getElementById('icpToolbar').style.display = 'none';
+  setIcpStatus('loading', 'Connecting...');
+
+  const sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const logSource = new EventSource(`/search-log?sid=${sid}`);
+  logSource.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.done) { logSource.close(); return; }
+    if (d.msg)  setIcpStatus('loading', d.msg);
+  };
+  logSource.onerror = () => logSource.close();
+
+  try {
+    const res  = await fetch('/icp-search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ combinations, sid })
+    });
+    const data = await res.json();
+    logSource.close();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    if (!data.results || !data.results.length) {
+      setIcpStatus('error', 'No companies found. Try different search terms.');
+      btn.disabled = false;
+      return;
+    }
+    renderIcpResults(data.results);
+    const combLabel = combinations.length > 1 ? ` across ${combinations.length} searches` : '';
+    setIcpStatus('ok', `Found ${data.count} company website${data.count !== 1 ? 's' : ''}${combLabel}.`);
+  } catch(e) {
+    logSource.close();
+    setIcpStatus('error', e.message);
+  }
+  btn.disabled = false;
+}
+
+let icpData = [];
+
+function renderIcpResults(results) {
+  icpData = results;
+  const toolbar = document.getElementById('icpToolbar');
+  toolbar.style.display = results.length ? 'flex' : 'none';
+  updateIcpSelCount();
+
+  document.getElementById('icpResults').innerHTML = results.map((r, i) => `
+    <div class="icp-card" id="icp-card-${i}">
+      <div class="icp-card-top">
+        <input type="checkbox" class="icp-chk" data-idx="${i}" onchange="onIcpChk(this)">
+        <span class="icp-num">${i + 1}</span>
+        <div class="icp-card-body">
+          <div class="icp-title">${esc(r.title)}</div>
+          <a class="icp-url" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>
+          ${r.description ? `<div class="icp-desc">${esc(r.description)}</div>` : ''}
+        </div>
+        <button class="icp-copy" onclick="copyIcp(this,'${esc(r.url)}')">Copy</button>
+      </div>
+    </div>`).join('');
+}
+
+function onIcpChk(chk) {
+  const card = document.getElementById('icp-card-' + chk.dataset.idx);
+  if (card) card.classList.toggle('selected', chk.checked);
+  updateIcpSelCount();
+}
+
+function toggleAllIcp(master) {
+  document.querySelectorAll('.icp-chk').forEach(c => {
+    c.checked = master.checked;
+    const card = document.getElementById('icp-card-' + c.dataset.idx);
+    if (card) card.classList.toggle('selected', master.checked);
+  });
+  updateIcpSelCount();
+}
+
+function updateIcpSelCount() {
+  const all     = [...document.querySelectorAll('.icp-chk')];
+  const checked = all.filter(c => c.checked);
+  const master  = document.getElementById('icpChkAll');
+  const lbl     = document.getElementById('icpSelCount');
+  if (lbl) lbl.textContent = checked.length
+    ? `${checked.length} of ${all.length} selected`
+    : `${all.length} compan${all.length !== 1 ? 'ies' : 'y'}`;
+  if (master) {
+    master.indeterminate = checked.length > 0 && checked.length < all.length;
+    master.checked = all.length > 0 && checked.length === all.length;
+  }
+}
+
+function exportIcpCsv() {
+  const checked = [...document.querySelectorAll('.icp-chk:checked')];
+  const rows    = checked.length
+    ? checked.map(c => icpData[parseInt(c.dataset.idx)])
+    : icpData;
+  if (!rows.length) return;
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = ['Company,URL,Description']
+    .concat(rows.map(r => `${q(r.title)},${q(r.url)},${q(r.description)}`))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'icp_companies.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyAllIcpUrls() {
+  const checked = [...document.querySelectorAll('.icp-chk:checked')];
+  const urls    = checked.length
+    ? checked.map(c => icpData[parseInt(c.dataset.idx)].url)
+    : icpData.map(r => r.url);
+  copyToClipboard(urls.join('\n')).then(() => {
+    const b = document.querySelector('.icp-toolbar .copy-all');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy All URLs', 1500);
+  });
+}
+
+function copyIcp(btn, url) {
+  copyToClipboard(url)
+    .then(() => {
+      btn.textContent = 'Copied!'; btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 1500);
+    })
+    .catch(() => { btn.textContent = 'Failed!'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); });
+}
 </script>
-</div>
+</div><!-- /#page-linkedin -->
+
+<!-- ══ ICP Finder Section ══ -->
+<div class="page-section" id="page-icp">
+  <div class="search-form">
+    <div class="field-group">
+      <div class="field-row">
+        <div class="field-label">Product / Industry</div>
+        <div class="tag-input" id="ti-icp-product" onclick="document.getElementById('inp-icp-product').focus()">
+          <div id="tags-icp-product"></div>
+          <input id="inp-icp-product" type="text" placeholder="e.g. Steering  (Enter to add)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Location</div>
+        <div class="tag-input" id="ti-icp-location" onclick="document.getElementById('inp-icp-location').focus()">
+          <div id="tags-icp-location"></div>
+          <input id="inp-icp-location" type="text" placeholder="e.g. Pune  (Enter to add)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Company Type</div>
+        <div class="tag-input" id="ti-icp-type" onclick="document.getElementById('inp-icp-type').focus()">
+          <div id="tags-icp-type"></div>
+          <input id="inp-icp-type" type="text" placeholder="e.g. Manufacturer  (Enter to add)">
+        </div>
+      </div>
+    </div>
+    <div class="combo-hint" id="icpComboHint"></div>
+    <div class="search-bottom">
+      <button class="btn" id="icpBtn" onclick="doIcpSearch()">Search</button>
+    </div>
+  </div>
+  <div id="icpStatus" style="width:100%;max-width:820px;font-size:.82rem;color:#6b7280;margin-bottom:14px;min-height:18px;display:flex;align-items:center;gap:8px"></div>
+  <div class="icp-toolbar" id="icpToolbar" style="display:none">
+    <div class="icp-toolbar-left">
+      <input type="checkbox" id="icpChkAll" title="Select all" onchange="toggleAllIcp(this)">
+      <span id="icpSelCount"></span>
+    </div>
+    <button class="copy-all" onclick="copyAllIcpUrls()">Copy All URLs</button>
+    <button class="icp-export-btn" id="icpExportBtn" onclick="exportIcpCsv()">Export CSV</button>
+  </div>
+  <div class="icp-results" id="icpResults"></div>
+</div><!-- /#page-icp -->
+
+</div><!-- /.app -->
 </body>
 </html>

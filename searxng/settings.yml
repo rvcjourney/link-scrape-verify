@@ -1,0 +1,31 @@
+use_default_settings: true
+
+server:
+  secret_key: "motm-scraper-searxng-secret-key-2025"
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+# Keep only the engines useful for B2B / LinkedIn profile searches
+engines:
+  - name: bing
+    engine: bing
+    disabled: false
+  - name: brave
+    engine: brave
+    disabled: false
+  - name: duckduckgo
+    engine: duckduckgo
+    disabled: false
+  - name: google
+    engine: google
+    disabled: true   # VPS IP gets CAPTCHAed — keep disabled
+
+ui:
+  default_theme: simple
+  query_in_title: false

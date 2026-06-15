@@ -5,7 +5,7 @@ import queue
 import threading
 import requests as _req
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
-from scraper import run_search, is_chrome_debug_running
+from scraper import run_search, run_icp_search
 
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "https://n8n.b2botix.ai/webhook/linkedin-filter")
 
@@ -42,13 +42,6 @@ def favicon():
 def index():
     return send_from_directory(".", "index.html")
 
-
-@app.route("/chrome-status")
-def chrome_status():
-    import config as _cfg
-    if _cfg.BROWSER_HEADLESS:
-        return jsonify({"connected": False, "headless": True})
-    return jsonify({"connected": is_chrome_debug_running(), "headless": False})
 
 
 @app.route("/search-log")
@@ -87,15 +80,18 @@ def search_log():
 
 @app.route("/search", methods=["POST"])
 def search():
-    data    = request.get_json(force=True)
-    sid     = (data.get("sid") or "").strip()
-    queries = data.get("queries") or []
-    # backwards-compat: single query string
-    if not queries:
+    data         = request.get_json(force=True)
+    sid          = (data.get("sid") or "").strip()
+    combinations = data.get("combinations") or []
+    # backwards-compat: flat queries list or single query string
+    if not combinations:
+        for q_str in (data.get("queries") or []):
+            combinations.append({"query": q_str, "location": ""})
+    if not combinations:
         single = (data.get("query") or "").strip()
         if single:
-            queries = [single]
-    if not queries:
+            combinations = [{"query": single, "location": ""}]
+    if not combinations:
         return jsonify({"error": "Query is empty"}), 400
 
     q = _make_queue(sid)
@@ -111,15 +107,64 @@ def search():
 
     try:
         all_urls, seen = [], set()
-        for i, query in enumerate(queries):
-            if len(queries) > 1:
-                log_fn(f"Search {i + 1}/{len(queries)}: {query}")
-            urls = run_search(query, log_fn=log_fn)
+        for i, combo in enumerate(combinations):
+            query    = (combo.get("query")    or "").strip()
+            location = (combo.get("location") or "").strip()
+            company  = (combo.get("company")  or "").strip()
+            if not query:
+                continue
+            if len(combinations) > 1:
+                log_fn(f"Search {i + 1}/{len(combinations)}: {query}")
+            urls = run_search(query, log_fn=log_fn, location=location, company=company)
             for u in urls:
                 if u not in seen:
                     seen.add(u)
                     all_urls.append(u)
         return jsonify({"urls": all_urls, "count": len(all_urls)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        log_fn(None)
+        threading.Timer(15, _drop_queue, args=[sid]).start()
+
+
+@app.route("/icp-search", methods=["POST"])
+def icp_search():
+    data         = request.get_json(force=True)
+    sid          = (data.get("sid") or "").strip()
+    combinations = data.get("combinations") or []
+    if not combinations:
+        single = (data.get("query") or "").strip()
+        if single:
+            combinations = [{"query": single, "location": ""}]
+    if not combinations:
+        return jsonify({"error": "Query is empty"}), 400
+
+    q = _make_queue(sid)
+
+    def log_fn(msg):
+        if msg is None:
+            q.put(None)
+            return
+        try:
+            q.put_nowait(str(msg))
+        except queue.Full:
+            pass
+
+    try:
+        all_results, seen_urls = [], set()
+        for i, combo in enumerate(combinations):
+            query    = (combo.get("query")    or "").strip()
+            location = (combo.get("location") or "").strip()
+            if not query:
+                continue
+            if len(combinations) > 1:
+                log_fn(f"Search {i + 1}/{len(combinations)}: {query}")
+            for r in run_icp_search(query, log_fn=log_fn, location=location):
+                if r['url'] not in seen_urls:
+                    seen_urls.add(r['url'])
+                    all_results.append(r)
+        return jsonify({"results": all_results, "count": len(all_results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
