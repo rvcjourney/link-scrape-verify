@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import requests as _http
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -52,62 +53,67 @@ _STATE_CITIES = {
 
 
 def _fetch_results(query: str, max_results: int, log_fn=None) -> list[dict]:
-    """Query SearXNG (Bing + Brave + DDG); fall back to DDG directly if unavailable."""
+    """Run SearXNG (Bing+Brave) and DDG in parallel, merge and deduplicate results."""
     def _log(msg):
-        # avoid double-print: if log_fn is the outer log() it already calls console.print
         if log_fn:
             log_fn(msg)
         else:
             console.print(msg)
 
-    # SearXNG / Bing / Brave don't honour the site: operator via API —
-    # convert it to a plain text keyword so they still prefer those URLs.
+    # SearXNG/Bing/Brave don't honour site: via API — use domain as a text keyword
     searxng_q = re.sub(r'site:(\S+)', lambda m: m.group(1), query, flags=re.IGNORECASE).strip()
 
-    try:
-        resp = _http.get(
-            f"{_SEARXNG_URL}/search",
-            params={
-                "q":        searxng_q,
-                "format":   "json",
-                "engines":  "bing,brave,duckduckgo",
-                "language": "en-IN",
-            },
-            timeout=15,
-        )
-        if resp.status_code == 200:
-            raw = resp.json().get("results", [])
-            if raw:
-                _log(f"[green]SearXNG[/green]: {len(raw)} results (Bing + Brave + DDG)")
-                return [
-                    {
-                        "url":   r.get("url",     ""),
-                        "title": r.get("title",   ""),
-                        "body":  r.get("content", ""),
-                    }
-                    for r in raw[:max_results]
-                ]
-            _log("[yellow]SearXNG returned 0 results — falling back to DDG[/yellow]")
-        else:
-            _log(f"[yellow]SearXNG HTTP {resp.status_code} — falling back to DDG[/yellow]")
-    except Exception as e:
-        _log(f"[yellow]SearXNG unavailable ({e}) — falling back to DDG[/yellow]")
-
-    # Fallback: DDG directly
-    try:
-        with DDGS() as ddgs:
-            raw = ddgs.text(query, max_results=max_results, region="in-en") or []
-        _log(f"DDG fallback: {len(raw)} results")
-        return [
-            {
-                "url":   r.get("href",  ""),
-                "title": r.get("title", ""),
-                "body":  r.get("body",  ""),
-            }
-            for r in raw
-        ]
-    except Exception:
+    def _from_searxng():
+        try:
+            resp = _http.get(
+                f"{_SEARXNG_URL}/search",
+                params={"q": searxng_q, "format": "json", "engines": "bing,brave", "language": "en-IN"},
+                timeout=15,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("results", [])
+        except Exception:
+            pass
         return []
+
+    def _from_ddg():
+        try:
+            with DDGS() as ddgs:
+                return ddgs.text(query, max_results=max_results, region="in-en") or []
+        except Exception:
+            return []
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_sx  = pool.submit(_from_searxng)
+        f_ddg = pool.submit(_from_ddg)
+        sx_raw  = f_sx.result()
+        ddg_raw = f_ddg.result()
+
+    results: list[dict] = []
+    seen: set[str] = set()
+
+    for r in sx_raw[:max_results]:
+        url = r.get("url", "")
+        if url and url not in seen:
+            seen.add(url)
+            results.append({"url": url, "title": r.get("title", ""), "body": r.get("content", "")})
+    if sx_raw:
+        _log(f"SearXNG (Bing+Brave): {len(results)} results")
+
+    ddg_added = 0
+    for r in ddg_raw:
+        url = r.get("href", "")
+        if url and url not in seen:
+            seen.add(url)
+            results.append({"url": url, "title": r.get("title", ""), "body": r.get("body", "")})
+            ddg_added += 1
+    if ddg_added:
+        _log(f"DDG: +{ddg_added} results")
+
+    if not results:
+        _log("No results from any engine")
+
+    return results[:max_results]
 
 
 def is_chrome_debug_running() -> bool:
@@ -162,13 +168,21 @@ def _build_query_variants(base_query: str) -> list[str]:
     return [base_query]
 
 
+def _strip_domain_suffixes(query: str) -> str:
+    """Remove accidental TLD suffixes from quoted company names e.g. "Tata.com" → "Tata"."""
+    return re.sub(
+        r'(\"[^\"]+?)\.(?:com|in|co\.in|net|org|io|ai|tech|biz|info)(\")',
+        r'\1\2', query, flags=re.IGNORECASE
+    )
+
+
 def build_search_query(user_input: str) -> str:
     if re.search(r'site:', user_input, re.IGNORECASE):
-        return user_input.strip()
+        return _strip_domain_suffixes(user_input.strip())
     cleaned = user_input.strip()
     if "linkedin" not in cleaned.lower():
         cleaned += " linkedin"
-    return cleaned
+    return _strip_domain_suffixes(cleaned)
 
 
 # Domains to exclude from ICP results
