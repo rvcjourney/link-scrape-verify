@@ -239,12 +239,16 @@ _QUALITY_TLDS = ('.co.in', '.com', '.in', '.net', '.co')
 
 
 def _enhance_icp_query(query: str) -> str:
-    """Append business intent terms if not already present."""
+    """Append business intent terms to prefer company websites over articles."""
     q = query.strip()
     business_terms = ['company','manufacturer','supplier','exporter','industry',
                       'industries','ltd','pvt','corporation','enterprise']
     if not any(t in q.lower() for t in business_terms):
         q += ' manufacturer OR supplier OR company'
+    # Add corporate entity signals so search engines return company pages, not blogs
+    corp_terms = ['pvt', 'ltd', 'limited', 'industries', 'corp']
+    if not any(t in q.lower() for t in corp_terms):
+        q += ' "pvt ltd" OR "limited" OR "industries"'
     return q
 
 
@@ -267,6 +271,14 @@ def _domain_ok(domain: str) -> bool:
     if any(k in domain for k in _DIRECTORY_DOMAIN_KEYWORDS):
         return False
     return True
+
+
+def _is_educational_snippet(snippet: str) -> bool:
+    """Return True if snippet looks like a blog/article, not a company page."""
+    s = snippet.lower()
+    if re.search(r'\b(how to|what is|types of|definition|explained|a guide|tutorial|learn about|overview of|working principle|diagram of)\b', s):
+        return True
+    return False
 
 
 def _is_directory_snippet(snippet: str) -> bool:
@@ -322,7 +334,8 @@ def run_icp_search(query: str, log_fn=None, location: str = "") -> list[dict]:
             snippet = ((r.get('title') or '') + ' ' + (r.get('body') or '')).strip()
             if _is_directory_snippet(snippet):
                 continue
-            # no relevance or location post-filtering — query itself handles matching
+            if _is_educational_snippet(snippet):
+                continue
             quality = any(domain.endswith(t) for t in _QUALITY_TLDS)
             seen_domains.add(domain)
             results.append({
