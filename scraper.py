@@ -247,42 +247,35 @@ def run_icp_search(query: str, log_fn=None, location: str = "") -> list[dict]:
         log("Searching for companies (Bing + Brave + DDG)...")
         for r in _fetch_results(enhanced, max_results=config.MAX_PAGES * 10):
             url = (r.get('url') or '').split('?')[0]
-                if not url.startswith('http'):
-                    continue
-                try:
-                    domain = urlparse(url).netloc.lower().lstrip('www.')
-                except Exception:
-                    continue
-                if not domain:
-                    continue
-                # blocklist check
-                if any(b in domain for b in _ICP_BLOCKED):
-                    continue
-                # CMS/blog pattern check
-                if not _domain_ok(domain):
-                    continue
-                # skip duplicate domains
-                if domain in seen_domains:
-                    continue
-                snippet = ((r.get('title') or '') + ' ' + (r.get('body') or '')).strip()
-                # drop directory/listing pages
-                if _is_directory_snippet(snippet):
-                    continue
-                # relevance check — must contain core query terms
-                if not _icp_relevant(query, snippet):
-                    continue
-                # location filter — same logic as LinkedIn
-                if location and not _location_matches(location, snippet):
-                    continue
-                # domain quality — deprioritise low-quality TLDs (.info, .biz, .xyz)
-                quality = any(domain.endswith(t) for t in _QUALITY_TLDS)
-                seen_domains.add(domain)
-                results.append({
-                    'url':         url,
-                    'title':       (r.get('title') or domain).strip(),
-                    'description': (r.get('body')  or '').strip(),
-                    'quality':     quality,
-                })
+            if not url.startswith('http'):
+                continue
+            try:
+                domain = urlparse(url).netloc.lower().lstrip('www.')
+            except Exception:
+                continue
+            if not domain:
+                continue
+            if any(b in domain for b in _ICP_BLOCKED):
+                continue
+            if not _domain_ok(domain):
+                continue
+            if domain in seen_domains:
+                continue
+            snippet = ((r.get('title') or '') + ' ' + (r.get('body') or '')).strip()
+            if _is_directory_snippet(snippet):
+                continue
+            if not _icp_relevant(query, snippet):
+                continue
+            if location and not _location_matches(location, snippet):
+                continue
+            quality = any(domain.endswith(t) for t in _QUALITY_TLDS)
+            seen_domains.add(domain)
+            results.append({
+                'url':         url,
+                'title':       (r.get('title') or domain).strip(),
+                'description': (r.get('body')  or '').strip(),
+                'quality':     quality,
+            })
 
         # sort: quality domains first
         results.sort(key=lambda x: not x['quality'])
